@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Notifications\OnboardingInvitationNotification;
 use App\Services\LeadService;
 use App\Services\OnboardingInvitationService;
+use App\Support\LeadActivityPresenter;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -136,7 +137,9 @@ class LeadWebController extends Controller
     {
         Gate::authorize('view', $lead);
 
-        $activities = Activity::forSubject($lead)->latest()->limit(30)->get();
+        $activities = LeadActivityPresenter::collection(
+            Activity::forSubject($lead)->with('causer')->latest()->limit(30)->get()
+        );
 
         return Inertia::render('Leads/Show', [
             'lead' => $lead->load(['assignee', 'notes.author', 'invitations']),
@@ -169,7 +172,7 @@ class LeadWebController extends Controller
             unset($data['assigned_to']);
         }
         if ($data !== []) {
-            $lead->update($data);
+            $this->leadService->updateDetails($lead, $data, $request->user());
         }
 
         return back()->with('success', 'Lead updated.');
@@ -187,7 +190,11 @@ class LeadWebController extends Controller
             'body' => $data['body'],
         ]);
 
-        activity('lead')->performedOn($lead)->causedBy($request->user())->log('Note added');
+        activity('lead')
+            ->performedOn($lead)
+            ->causedBy($request->user())
+            ->event('note_added')
+            ->log('Note added');
 
         return back()->with('success', 'Note added.');
     }
@@ -205,9 +212,12 @@ class LeadWebController extends Controller
         Notification::route('mail', $lead->email)
             ->notify(new OnboardingInvitationNotification($result['url']));
 
-        activity('lead')->performedOn($lead)->causedBy($request->user())
-            ->withProperties(['url' => $result['url']])
-            ->log('Onboarding invitation sent');
+        activity('lead')
+            ->performedOn($lead)
+            ->causedBy($request->user())
+            ->event('invite_sent')
+            ->withProperties(['product' => $data['product'], 'url' => $result['url']])
+            ->log('Onboarding invitation sent for '.Product::from($data['product'])->label());
 
         return back()->with('success', 'Invitation sent: '.$result['url']);
     }
@@ -216,7 +226,11 @@ class LeadWebController extends Controller
     {
         Gate::authorize('delete', $lead);
 
-        activity('lead')->performedOn($lead)->causedBy(request()->user())->log('Lead deleted');
+        activity('lead')
+            ->performedOn($lead)
+            ->causedBy(request()->user())
+            ->event('deleted')
+            ->log('Lead deleted');
 
         $lead->delete();
 

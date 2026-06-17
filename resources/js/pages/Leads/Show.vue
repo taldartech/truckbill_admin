@@ -26,7 +26,14 @@ const props = defineProps<{
         assigned_to: number | null;
         notes: Array<{ id: number; body: string; author?: { name: string } }>;
     };
-    activities: Array<{ description: string; created_at: string }>;
+    activities: Array<{
+        id: number;
+        event: string | null;
+        description: string;
+        created_at: string;
+        actor: string | null;
+        properties: Record<string, unknown>;
+    }>;
     users: Array<{ id: number; name: string }>;
     statuses: Array<{ value: string; label: string }>;
     products: Array<{ value: string; label: string }>;
@@ -62,6 +69,10 @@ function deleteLead() {
     if (confirm('Delete this lead permanently?')) {
         router.delete(leadsRoute.destroy({ lead: props.lead.id }).url);
     }
+}
+
+function formatActivityTime(value: string) {
+    return new Date(value).toLocaleString();
 }
 </script>
 
@@ -103,12 +114,14 @@ function deleteLead() {
 
             <div class="rounded-xl border bg-card p-5">
                 <h2 class="mb-3 font-semibold">Activity Timeline</h2>
-                <ul class="space-y-2 text-sm">
-                    <li v-for="(activity, i) in activities" :key="i" class="border-l-2 border-primary pl-3">
-                        {{ activity.description }}
-                        <span class="text-muted-foreground block text-xs">{{ activity.created_at }}</span>
+                <ul v-if="activities.length > 0" class="space-y-4">
+                    <li v-for="activity in activities" :key="activity.id" class="border-l-2 border-primary pl-3">
+                        <p class="font-medium">{{ activity.description }}</p>
+                        <p v-if="activity.actor" class="text-muted-foreground mt-1 text-xs">by {{ activity.actor }}</p>
+                        <p class="text-muted-foreground text-xs">{{ formatActivityTime(activity.created_at) }}</p>
                     </li>
                 </ul>
+                <p v-else class="text-muted-foreground text-sm">No activity recorded yet.</p>
             </div>
         </div>
 

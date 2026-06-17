@@ -8,13 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use Spatie\Activitylog\Support\LogOptions;
-use Spatie\Activitylog\Models\Concerns\LogsActivity;
 
 class Lead extends Model
 {
-    use LogsActivity;
-
     protected $fillable = [
         'name',
         'company_name',
@@ -42,14 +38,6 @@ class Lead extends Model
             'product' => Product::class,
             'converted_at' => 'datetime',
         ];
-    }
-
-    public function getActivitylogOptions(): LogOptions
-    {
-        return LogOptions::defaults()
-            ->logFillable()
-            ->logOnlyDirty()
-            ->useLogName('lead');
     }
 
     public function assignee(): BelongsTo

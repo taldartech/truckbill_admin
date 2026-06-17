@@ -8,13 +8,12 @@ use App\Http\Controllers\Controller;
 use App\Models\Lead;
 use App\Models\LeadNote;
 use App\Models\User;
-use App\Notifications\OnboardingInvitationNotification;
 use App\Services\LeadService;
 use App\Services\OnboardingInvitationService;
+use App\Support\LeadActivityPresenter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\Rule;
 use Spatie\Activitylog\Models\Activity;
 
@@ -116,8 +115,7 @@ class LeadController extends Controller
         }
 
         if ($data !== []) {
-            $lead->update($data);
-            activity('lead')->performedOn($lead)->causedBy($request->user())->log('Lead updated');
+            $this->leadService->updateDetails($lead, $data, $request->user());
         }
 
         return response()->json($lead->fresh(['assignee', 'notes.author']));
@@ -135,7 +133,11 @@ class LeadController extends Controller
             'body' => $data['body'],
         ]);
 
-        activity('lead')->performedOn($lead)->causedBy($request->user())->log('Note added');
+        activity('lead')
+            ->performedOn($lead)
+            ->causedBy($request->user())
+            ->event('note_added')
+            ->log('Note added');
 
         return response()->json($note->load('author'), 201);
     }
@@ -144,11 +146,10 @@ class LeadController extends Controller
     {
         Gate::authorize('view', $lead);
 
-        $activities = Activity::forSubject($lead)
-            ->latest()
-            ->limit(50)
-            ->get();
-
-        return response()->json($activities);
+        return response()->json(
+            LeadActivityPresenter::collection(
+                Activity::forSubject($lead)->with('causer')->latest()->limit(50)->get()
+            )
+        );
     }
 }

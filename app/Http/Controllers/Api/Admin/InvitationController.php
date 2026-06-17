@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Admin;
 
+use App\Enums\Product;
 use App\Http\Controllers\Controller;
 use App\Models\Lead;
 use App\Notifications\OnboardingInvitationNotification;
@@ -36,8 +37,9 @@ class InvitationController extends Controller
         activity('lead')
             ->performedOn($lead)
             ->causedBy($request->user())
+            ->event('invite_sent')
             ->withProperties(['url' => $result['url'], 'product' => $data['product']])
-            ->log('Onboarding invitation sent');
+            ->log('Onboarding invitation sent for '.Product::from($data['product'])->label());
 
         return response()->json([
             'success' => true,
