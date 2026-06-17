@@ -1,0 +1,74 @@
+{
+  "info": {
+    "name": "TruckBill CRM",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "admin_url", "value": "https://admin.truckbill.in" },
+    { "key": "website_api_key", "value": "" },
+    { "key": "sanctum_token", "value": "" },
+    { "key": "onboarding_token", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Public - Create Lead",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "X-Api-Key", "value": "{{website_api_key}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"test@example.com\",\n  \"mobile\": \"9876543210\",\n  \"company_name\": \"Test Co\",\n  \"source\": \"website_demo\",\n  \"product_interested_in\": \"truckbill\"\n}"
+        },
+        "url": "{{admin_url}}/api/v1/public/leads"
+      }
+    },
+    {
+      "name": "Public - Get Onboarding",
+      "request": {
+        "method": "GET",
+        "url": "{{admin_url}}/api/v1/public/onboarding/{{onboarding_token}}"
+      }
+    },
+    {
+      "name": "Public - Send OTP",
+      "request": {
+        "method": "POST",
+        "url": "{{admin_url}}/api/v1/public/onboarding/{{onboarding_token}}/otp/send"
+      }
+    },
+    {
+      "name": "Admin - CRM Dashboard",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{sanctum_token}}" }],
+        "url": "{{admin_url}}/api/v1/admin/dashboards/crm"
+      }
+    },
+    {
+      "name": "Admin - List Leads",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{sanctum_token}}" }],
+        "url": "{{admin_url}}/api/v1/admin/leads"
+      }
+    },
+    {
+      "name": "Admin - Send Invite",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{sanctum_token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"product\": \"truckbill\"\n}"
+        },
+        "url": "{{admin_url}}/api/v1/admin/leads/1/invite"
+      }
+    }
+  ]
+}
