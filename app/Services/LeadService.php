@@ -80,6 +80,15 @@ class LeadService
         return $lead->fresh(['assignee']);
     }
 
+    public function markConverted(Lead $lead, ?User $actor = null): Lead
+    {
+        if ($lead->status === LeadStatus::Converted) {
+            return $lead;
+        }
+
+        return $this->updateStatus($lead, LeadStatus::Converted, $actor);
+    }
+
     public function updateDetails(Lead $lead, array $data, ?User $actor = null): Lead
     {
         $changes = [];

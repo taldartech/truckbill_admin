@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Head, router, usePage } from '@inertiajs/vue3';
-import { computed, reactive } from 'vue';
+import { Head, router } from '@inertiajs/vue3';
+import { reactive } from 'vue';
 import { dashboard } from '@/routes';
 import rolesRoute from '@/routes/roles';
 
@@ -17,9 +17,6 @@ const props = defineProps<{
     roles: Array<{ id: number; name: string; permissions: string[]; users_count: number }>;
     permissions: string[];
 }>();
-
-const page = usePage();
-const flash = computed(() => page.props.flash as { success?: string; error?: string });
 
 const permissionState = reactive<Record<number, string[]>>(
     Object.fromEntries(props.roles.map((r) => [r.id, [...r.permissions]])),
@@ -48,9 +45,6 @@ function saveRole(role: { id: number; name: string }) {
     <Head title="Roles" />
 
     <div class="flex flex-col gap-4 p-4">
-        <div v-if="flash?.success" class="rounded-md border border-green-200 bg-green-50 px-4 py-2 text-sm text-green-800">{{ flash.success }}</div>
-        <div v-if="flash?.error" class="rounded-md border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-800">{{ flash.error }}</div>
-
         <h1 class="text-2xl font-semibold">Roles & Permissions</h1>
 
         <div v-for="role in roles" :key="role.id" class="rounded-xl border bg-card p-5">

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Head, Link, router, usePage } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
+import { Head, Link, router } from '@inertiajs/vue3';
+import { ref } from 'vue';
 import { dashboard } from '@/routes';
 import leadsRoute from '@/routes/leads';
 
@@ -33,9 +33,6 @@ const props = defineProps<{
     products: Array<{ value: string; label: string }>;
     canCreate: boolean;
 }>();
-
-const page = usePage();
-const flash = computed(() => page.props.flash as { success?: string; error?: string });
 
 const search = ref(props.filters.search ?? '');
 const status = ref(props.filters.status ?? '');
@@ -72,10 +69,6 @@ function toggleSort(column: string) {
     <Head title="Leads" />
 
     <div class="flex flex-col gap-4 p-4">
-        <div v-if="flash?.success" class="rounded-md border border-green-200 bg-green-50 px-4 py-2 text-sm text-green-800">
-            {{ flash.success }}
-        </div>
-
         <div class="flex flex-wrap items-end justify-between gap-3">
             <div class="flex flex-wrap items-end gap-3">
                 <div>

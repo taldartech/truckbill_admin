@@ -219,7 +219,7 @@ class LeadWebController extends Controller
             ->withProperties(['product' => $data['product'], 'url' => $result['url']])
             ->log('Onboarding invitation sent for '.Product::from($data['product'])->label());
 
-        return back()->with('success', 'Invitation sent: '.$result['url']);
+        return back()->with('success', 'Invitation sent successfully.');
     }
 
     public function destroy(Lead $lead): RedirectResponse

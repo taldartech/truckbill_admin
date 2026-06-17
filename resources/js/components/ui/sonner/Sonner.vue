@@ -12,16 +12,23 @@ const props = defineProps<ToasterProps>()
 <template>
   <Sonner
     :class="cn('toaster group', props.class)"
+    rich-colors
     :style="{
       '--normal-bg': 'var(--popover)',
       '--normal-text': 'var(--popover-foreground)',
       '--normal-border': 'var(--border)',
       '--border-radius': 'var(--radius)',
+      '--success-bg': 'hsl(122 39% 96%)',
+      '--success-border': 'hsl(122 39% 82%)',
+      '--success-text': 'hsl(122 39% 28%)',
+      '--error-bg': 'hsl(0 84% 97%)',
+      '--error-border': 'hsl(0 84% 88%)',
+      '--error-text': 'hsl(0 84% 40%)',
     }"
     v-bind="props"
   >
     <template #success-icon>
-      <CircleCheckIcon class="size-4" />
+      <CircleCheckIcon class="size-4 text-green-600" />
     </template>
     <template #info-icon>
       <InfoIcon class="size-4" />

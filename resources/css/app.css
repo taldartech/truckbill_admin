@@ -170,3 +170,15 @@
         @apply bg-background text-foreground;
     }
 }
+
+[data-sonner-toaster] {
+    --success-bg: hsl(122 39% 96%);
+    --success-border: hsl(122 39% 82%);
+    --success-text: hsl(122 39% 28%);
+}
+
+.dark [data-sonner-toaster] {
+    --success-bg: hsl(122 39% 12%);
+    --success-border: hsl(122 39% 22%);
+    --success-text: hsl(122 39% 75%);
+}

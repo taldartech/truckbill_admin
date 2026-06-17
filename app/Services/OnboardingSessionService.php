@@ -2,9 +2,7 @@
 
 namespace App\Services;
 
-use App\Enums\LeadStatus;
 use App\Enums\Product;
-use App\Models\Lead;
 use App\Models\OnboardingInvitation;
 use App\Models\OnboardingSession;
 use App\Models\PolicyVersion;
@@ -17,6 +15,7 @@ class OnboardingSessionService
         private readonly OnboardingOtpService $otpService,
         private readonly OnboardingInvitationService $invitationService,
         private readonly ProvisioningOrchestrator $provisioningOrchestrator,
+        private readonly LeadService $leadService,
     ) {}
 
     public function resolveInvitation(string $token): OnboardingInvitation
@@ -104,11 +103,10 @@ class OnboardingSessionService
         $this->invitationService->markUsed($invitation);
         $this->otpService->consumeVerified($invitation->email);
 
-        if ($invitation->lead) {
-            $invitation->lead->update([
-                'status' => LeadStatus::Converted,
-                'converted_at' => now(),
-            ]);
+        $invitation->loadMissing('lead');
+
+        if ($invitation->lead !== null) {
+            $this->leadService->markConverted($invitation->lead);
         }
 
         $product = Product::from($invitation->product->value ?? $invitation->product);

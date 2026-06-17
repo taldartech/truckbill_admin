@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Head, Link, router, usePage } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
+import { Head, Link, router } from '@inertiajs/vue3';
+import { ref } from 'vue';
 import { dashboard } from '@/routes';
 import usersRoute from '@/routes/users';
 
@@ -28,9 +28,6 @@ const props = defineProps<{
     roles: string[];
 }>();
 
-const page = usePage();
-const flash = computed(() => page.props.flash as { success?: string });
-
 const search = ref(props.filters.search ?? '');
 const role = ref(props.filters.role ?? '');
 
@@ -43,8 +40,6 @@ function applyFilters() {
     <Head title="Users" />
 
     <div class="flex flex-col gap-4 p-4">
-        <div v-if="flash?.success" class="rounded-md border border-green-200 bg-green-50 px-4 py-2 text-sm text-green-800">{{ flash.success }}</div>
-
         <div class="flex flex-wrap items-end justify-between gap-3">
             <div class="flex flex-wrap gap-3">
                 <input v-model="search" type="search" placeholder="Search users..." class="rounded-md border px-3 py-2 text-sm" @keyup.enter="applyFilters" />

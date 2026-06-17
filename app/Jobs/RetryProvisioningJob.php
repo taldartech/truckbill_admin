@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\ProvisioningLog;
+use App\Services\LeadService;
 use App\Services\ProvisioningOrchestrator;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -14,7 +15,7 @@ class RetryProvisioningJob implements ShouldQueue
 
     public function __construct(public int $provisioningLogId) {}
 
-    public function handle(ProvisioningOrchestrator $orchestrator): void
+    public function handle(ProvisioningOrchestrator $orchestrator, LeadService $leadService): void
     {
         $log = ProvisioningLog::query()->find($this->provisioningLogId);
 
@@ -24,6 +25,12 @@ class RetryProvisioningJob implements ShouldQueue
 
         try {
             $orchestrator->retry($log);
+
+            $invitation = $log->invitation()->with('lead')->first();
+
+            if ($invitation?->lead !== null) {
+                $leadService->markConverted($invitation->lead);
+            }
         } catch (\Throwable $exception) {
             Log::error('Provisioning retry failed', [
                 'log_id' => $log->id,
