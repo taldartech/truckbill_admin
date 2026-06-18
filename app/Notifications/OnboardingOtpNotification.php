@@ -24,9 +24,11 @@ class OnboardingOtpNotification extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('Your TruckBill verification code')
-            ->line('Your one-time verification code is: **'.$this->otp.'**')
-            ->line('This code expires in '.$this->ttlMinutes.' minutes.')
-            ->line('If you did not request this, please ignore this email.');
+            ->subject('Your TruckBill Email Verification OTP')
+            ->view('emails.onboarding.otp', [
+                'subject' => 'Your TruckBill Email Verification OTP',
+                'otp' => $this->otp,
+                'ttlMinutes' => $this->ttlMinutes,
+            ]);
     }
 }

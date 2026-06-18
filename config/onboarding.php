@@ -18,14 +18,14 @@ return [
             'url' => 'https://truckbill.in/policies/privacy-policy.html',
         ],
         [
-            'key' => 'data_processing_consent',
-            'label' => 'Data Processing Consent',
-            'url' => 'https://truckbill.in/policies/data-processing-consent.html',
+            'key' => 'refund_policy',
+            'label' => 'Refund Policy',
+            'url' => 'https://truckbill.in/policies/refund-policy.html',
         ],
         [
-            'key' => 'product_usage_agreement',
-            'label' => 'Product Usage Agreement',
-            'url' => 'https://truckbill.in/policies/product-usage-agreement.html',
+            'key' => 'acceptable_use_policy',
+            'label' => 'Acceptable Use Policy',
+            'url' => 'https://truckbill.in/policies/acceptable-use-policy.html',
         ],
     ],
 ];

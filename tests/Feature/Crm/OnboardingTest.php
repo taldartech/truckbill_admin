@@ -5,6 +5,8 @@ use App\Models\Lead;
 use App\Models\OnboardingInvitation;
 use App\Models\PolicyVersion;
 use App\Models\User;
+use App\Notifications\OnboardingInvitationNotification;
+use App\Notifications\OnboardingWelcomeNotification;
 use App\Services\OnboardingInvitationService;
 use App\Services\OnboardingSessionService;
 use App\Services\ProvisioningOrchestrator;
@@ -58,10 +60,20 @@ test('crm user can send onboarding invite', function () {
         ->post(route('leads.invite', $lead), ['product' => 'truckbill'])
         ->assertRedirect();
 
+    Notification::assertSentOnDemand(OnboardingInvitationNotification::class, function (OnboardingInvitationNotification $notification) use ($lead): bool {
+        $mail = $notification->toMail(new \stdClass);
+        $data = $mail->viewData;
+
+        return $data['name'] === $lead->name
+            && str_contains((string) ($data['url'] ?? ''), '/onboarding/');
+    });
+
     expect(OnboardingInvitation::query()->where('lead_id', $lead->id)->exists())->toBeTrue();
 });
 
 test('completing onboarding converts the linked lead', function () {
+    Notification::fake();
+
     $this->mock(ProvisioningOrchestrator::class, function ($mock): void {
         $mock->shouldReceive('provision')
             ->once()
@@ -88,6 +100,14 @@ test('completing onboarding converts the linked lead', function () {
     ]);
 
     app(OnboardingSessionService::class)->complete($invitation->fresh(['lead', 'session']), 'Password1!');
+
+    Notification::assertSentOnDemand(OnboardingWelcomeNotification::class, function (OnboardingWelcomeNotification $notification): bool {
+        $mail = $notification->toMail(new \stdClass);
+        $data = $mail->viewData;
+
+        return $data['name'] === 'Convert Me'
+            && str_contains((string) ($data['loginUrl'] ?? ''), '/login');
+    });
 
     $lead->refresh();
 

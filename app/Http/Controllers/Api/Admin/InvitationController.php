@@ -32,7 +32,7 @@ class InvitationController extends Controller
         );
 
         Notification::route('mail', $lead->email)
-            ->notify(new OnboardingInvitationNotification($result['url']));
+            ->notify(new OnboardingInvitationNotification($lead->name, $result['url']));
 
         activity('lead')
             ->performedOn($lead)

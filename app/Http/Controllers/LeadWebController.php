@@ -210,7 +210,7 @@ class LeadWebController extends Controller
         $result = $this->invitationService->createForLead($lead, $data['product'], $request->user()->id);
 
         Notification::route('mail', $lead->email)
-            ->notify(new OnboardingInvitationNotification($result['url']));
+            ->notify(new OnboardingInvitationNotification($lead->name, $result['url']));
 
         activity('lead')
             ->performedOn($lead)

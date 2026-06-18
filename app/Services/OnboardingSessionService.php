@@ -6,7 +6,9 @@ use App\Enums\Product;
 use App\Models\OnboardingInvitation;
 use App\Models\OnboardingSession;
 use App\Models\PolicyVersion;
+use App\Notifications\OnboardingWelcomeNotification;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 
 class OnboardingSessionService
@@ -110,10 +112,15 @@ class OnboardingSessionService
         }
 
         $product = Product::from($invitation->product->value ?? $invitation->product);
+        $loginUrl = $product->loginUrl();
+        $recipientName = $invitation->lead?->name ?? $invitation->company_name ?? 'there';
+
+        Notification::route('mail', $invitation->email)
+            ->notify(new OnboardingWelcomeNotification($recipientName, $loginUrl, $product->label()));
 
         return [
             'success' => true,
-            'login_url' => $product->loginUrl(),
+            'login_url' => $loginUrl,
             'provisioning' => $result,
         ];
     }
