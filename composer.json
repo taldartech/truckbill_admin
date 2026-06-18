@@ -17,7 +17,7 @@
         "laravel/sanctum": "^4.3",
         "laravel/tinker": "^3.0",
         "laravel/wayfinder": "^0.1.14",
-        "spatie/laravel-activitylog": "^5.0",
+        "spatie/laravel-activitylog": "^4.12",
         "spatie/laravel-permission": "^8.0"
     },
     "require-dev": {
@@ -115,6 +115,9 @@
         "allow-plugins": {
             "pestphp/pest-plugin": true,
             "php-http/discovery": true
+        },
+        "platform": {
+            "php": "8.3.6"
         }
     },
     "minimum-stability": "stable",
