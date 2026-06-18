@@ -59,7 +59,7 @@ class ProvisioningOrchestrator
         } catch (\Throwable $exception) {
             $log->update([
                 'status' => 'failed',
-                'error_message' => $exception->getMessage(),
+                'error_message' => $this->formatErrorMessage($exception->getMessage()),
             ]);
 
             RetryProvisioningJob::dispatch($log->id)->delay(now()->addMinutes(5));
@@ -101,6 +101,7 @@ class ProvisioningOrchestrator
 
         $response = Http::timeout(30)
             ->withHeaders([
+                'Accept' => 'application/json',
                 'Content-Type' => 'application/json',
                 'X-Timestamp' => $timestamp,
                 'X-Signature' => $signature,
@@ -110,9 +111,39 @@ class ProvisioningOrchestrator
             ->post($url);
 
         if (! $response->successful()) {
-            throw new \RuntimeException('Product API error: '.$response->status().' '.$response->body());
+            throw new \RuntimeException('Product API error: '.$response->status().' '.$this->summarizeResponseBody($response->body()));
         }
 
         return $response->json() ?? ['status' => 'ok'];
+    }
+
+    private function summarizeResponseBody(string $body): string
+    {
+        $trimmed = ltrim($body);
+
+        if (str_starts_with($trimmed, '<!DOCTYPE') || str_starts_with($trimmed, '<html')) {
+            return 'HTML error page returned by product API';
+        }
+
+        $decoded = json_decode($trimmed, true);
+        if (is_array($decoded)) {
+            if (isset($decoded['message']) && is_string($decoded['message'])) {
+                return $decoded['message'];
+            }
+
+            if (isset($decoded['errors']) && is_array($decoded['errors'])) {
+                return collect($decoded['errors'])
+                    ->flatten()
+                    ->filter(fn ($message) => is_string($message))
+                    ->implode(' ');
+            }
+        }
+
+        return Str::limit($trimmed, 500);
+    }
+
+    private function formatErrorMessage(string $message): string
+    {
+        return Str::limit($message, 65000);
     }
 }
