@@ -20,7 +20,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"test@example.com\",\n  \"mobile\": \"9876543210\",\n  \"company_name\": \"Test Co\",\n  \"source\": \"website_demo\",\n  \"product_interested_in\": \"truckbill\"\n}"
+          "raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"test@example.com\",\n  \"mobile\": \"9876543210\",\n  \"company_name\": \"Test Co\",\n  \"source\": \"website_demo\",\n  \"product_interested_in\": \"broker\"\n}"
         },
         "url": "{{admin_url}}/api/v1/public/leads"
       }
@@ -65,7 +65,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"product\": \"truckbill\"\n}"
+          "raw": "{\n  \"product\": \"broker\"\n}"
         },
         "url": "{{admin_url}}/api/v1/admin/leads/1/invite"
       }

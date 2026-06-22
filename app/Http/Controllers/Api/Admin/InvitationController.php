@@ -22,7 +22,7 @@ class InvitationController extends Controller
         Gate::authorize('invite', $lead);
 
         $data = $request->validate([
-            'product' => ['required', Rule::in(['ownfleet', 'parchun', 'truckbill'])],
+            'product' => ['required', Rule::enum(Product::class)],
         ]);
 
         $result = $this->invitationService->createForLead(

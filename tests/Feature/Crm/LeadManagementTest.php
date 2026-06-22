@@ -27,7 +27,7 @@ test('public leads api creates lead', function () {
         'company_name' => 'Acme Transport',
         'mobile' => '9876543210',
         'email' => 'john@example.com',
-        'product_interested_in' => 'truckbill',
+        'product_interested_in' => 'broker',
         'source' => 'website_demo',
         'remarks' => 'Interested in demo',
         'utm_source' => 'google',

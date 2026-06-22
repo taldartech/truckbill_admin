@@ -43,7 +43,7 @@ test('admin can manually create lead via web', function () {
             'email' => 'manual@example.com',
             'mobile' => '9876543210',
             'company_name' => 'Manual Co',
-            'product' => 'truckbill',
+            'product' => 'broker',
             'status' => 'new',
         ])
         ->assertRedirect();

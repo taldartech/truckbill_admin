@@ -18,10 +18,10 @@ return [
             'login_url' => env('PARCHUN_LOGIN_URL', 'https://parchun.truckbill.in/login'),
             'signing_secret' => env('PARCHUN_SIGNING_SECRET'),
         ],
-        'truckbill' => [
-            'api_url' => env('TRUCKBILL_API_URL', 'https://live.truckbill.in'),
-            'login_url' => env('TRUCKBILL_LOGIN_URL', 'https://live.truckbill.in/login'),
-            'signing_secret' => env('TRUCKBILL_SIGNING_SECRET'),
+        'broker' => [
+            'api_url' => env('BROKER_API_URL', 'https://live.truckbill.in'),
+            'login_url' => env('BROKER_LOGIN_URL', 'https://live.truckbill.in/login'),
+            'signing_secret' => env('BROKER_SIGNING_SECRET'),
         ],
     ],
 ];

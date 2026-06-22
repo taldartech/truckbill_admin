@@ -16,7 +16,7 @@ Authentication: `X-Api-Key` header (server-side only in `submit.php`)
   "company_name": "Acme Transport",
   "mobile": "9876543210",
   "email": "john@example.com",
-  "product_interested_in": "truckbill",
+  "product_interested_in": "broker",
   "source": "website_demo",
   "remarks": "Optional message",
   "utm_source": "google",
@@ -66,7 +66,7 @@ Authentication: Laravel Sanctum bearer token
 | PUT | `/api/v1/admin/leads/{id}` | Update lead |
 | POST | `/api/v1/admin/leads/{id}/notes` | Add note |
 | GET | `/api/v1/admin/leads/{id}/activities` | Activity timeline |
-| POST | `/api/v1/admin/leads/{id}/invite` | Send onboarding invite `{ "product": "truckbill" }` |
+| POST | `/api/v1/admin/leads/{id}/invite` | Send onboarding invite `{ "product": "broker" }` |
 
 ---
 

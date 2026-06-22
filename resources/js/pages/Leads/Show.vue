@@ -49,7 +49,7 @@ const updateForm = useForm({
 });
 
 const noteForm = useForm({ body: '' });
-const inviteForm = useForm({ product: props.lead.product || 'truckbill' });
+const inviteForm = useForm({ product: props.lead.product || 'broker' });
 
 function saveLead() {
     updateForm.patch(leadsRoute.update({ lead: props.lead.id }).url);

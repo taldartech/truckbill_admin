@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Api;
 
+use App\Enums\Product;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -19,7 +20,7 @@ class StorePublicLeadRequest extends FormRequest
             'company_name' => ['nullable', 'string', 'max:255'],
             'mobile' => ['nullable', 'string', 'max:20'],
             'email' => ['required', 'email', 'max:255'],
-            'product_interested_in' => ['nullable', Rule::in(['ownfleet', 'parchun', 'truckbill'])],
+            'product_interested_in' => ['nullable', Rule::enum(Product::class)],
             'source' => ['required', 'string', 'max:100'],
             'remarks' => ['nullable', 'string', 'max:5000'],
             'utm_source' => ['nullable', 'string', 'max:255'],

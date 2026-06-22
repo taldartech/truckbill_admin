@@ -29,11 +29,11 @@ test('onboarding token validation returns invitation details', function () {
         'company_name' => 'Jane Co',
         'source' => 'manual',
         'status' => 'qualified',
-        'product' => 'truckbill',
+        'product' => 'broker',
     ]);
 
     $service = app(OnboardingInvitationService::class);
-    $result = $service->createForLead($lead, 'truckbill', 1);
+    $result = $service->createForLead($lead, 'broker', 1);
 
     $this->getJson('/api/v1/public/onboarding/'.$result['plain_token'])
         ->assertOk()
@@ -50,11 +50,11 @@ test('crm user can send onboarding invite', function () {
         'email' => 'invite@example.com',
         'source' => 'manual',
         'status' => 'qualified',
-        'product' => 'truckbill',
+        'product' => 'broker',
     ]);
 
     $this->actingAs($admin)
-        ->post(route('leads.invite', $lead), ['product' => 'truckbill'])
+        ->post(route('leads.invite', $lead), ['product' => 'broker'])
         ->assertRedirect();
 
     Notification::assertSentOnDemand(OnboardingInvitationNotification::class, function (OnboardingInvitationNotification $notification) use ($lead): bool {
@@ -82,10 +82,10 @@ test('completing onboarding converts the linked lead', function () {
         'email' => 'convert@example.com',
         'source' => 'manual',
         'status' => LeadStatus::Qualified,
-        'product' => 'truckbill',
+        'product' => 'broker',
     ]);
 
-    $invitationResult = app(OnboardingInvitationService::class)->createForLead($lead, 'truckbill', 1);
+    $invitationResult = app(OnboardingInvitationService::class)->createForLead($lead, 'broker', 1);
     $invitation = $invitationResult['invitation'];
     $session = $invitation->session;
 

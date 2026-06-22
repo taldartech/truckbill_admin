@@ -26,8 +26,9 @@ OWNFLEET_SIGNING_SECRET=<shared-with-ownfleet>
 PARCHUN_API_URL=https://parchun.truckbill.in
 PARCHUN_SIGNING_SECRET=<shared-with-partload>
 
-TRUCKBILL_API_URL=https://live.truckbill.in
-TRUCKBILL_SIGNING_SECRET=<shared-with-truckbill>
+BROKER_API_URL=https://live.truckbill.in
+BROKER_LOGIN_URL=https://live.truckbill.in/login
+BROKER_SIGNING_SECRET=<shared-with-broker-app>
 ```
 
 Run queue worker for provisioning retries: `php artisan queue:work`
