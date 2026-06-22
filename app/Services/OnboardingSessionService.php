@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Enums\Product;
 use App\Models\OnboardingInvitation;
 use App\Models\OnboardingSession;
-use App\Models\PolicyVersion;
 use App\Notifications\OnboardingWelcomeNotification;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
@@ -46,13 +45,12 @@ class OnboardingSessionService
     public function acceptPolicies(OnboardingInvitation $invitation, array $acceptedKeys): void
     {
         $session = $this->sessionFor($invitation);
-        $policy = PolicyVersion::active();
+        $required = collect(config('onboarding.policies', []))->pluck('key')->sort()->values();
 
-        if ($policy === null) {
-            throw ValidationException::withMessages(['policies' => 'No active policy version configured.']);
+        if ($required->isEmpty()) {
+            throw ValidationException::withMessages(['policies' => 'No policies configured.']);
         }
 
-        $required = collect($policy->documents)->pluck('key')->sort()->values();
         $provided = collect($acceptedKeys)->sort()->values();
 
         if ($required->toArray() !== $provided->toArray()) {
@@ -61,7 +59,6 @@ class OnboardingSessionService
 
         $session->update([
             'policy_accepted_at' => now(),
-            'policy_version' => $policy->version,
         ]);
     }
 

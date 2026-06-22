@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\PolicyVersion;
 use App\Services\OnboardingInvitationService;
 use App\Services\OnboardingSessionService;
 use Illuminate\Http\JsonResponse;
@@ -21,7 +20,6 @@ class PublicOnboardingController extends Controller
     {
         $invitation = $this->sessionService->resolveInvitation($token);
         $session = $invitation->session;
-        $policy = PolicyVersion::active();
 
         return response()->json([
             'valid' => true,
@@ -37,8 +35,7 @@ class PublicOnboardingController extends Controller
                 'password_set' => $session?->password_set_at !== null,
                 'completed' => $session?->completed_at !== null,
             ],
-            'policies' => $policy?->documents ?? config('onboarding.policies'),
-            'policy_version' => $policy?->version,
+            'policies' => config('onboarding.policies', []),
         ]);
     }
 

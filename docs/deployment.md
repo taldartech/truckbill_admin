@@ -69,7 +69,7 @@ php artisan migrate
 2. Assign lead, change status, add note
 3. Send onboarding invite → open link on website
 4. Complete OTP, policies, password flow
-5. Verify user created in target product with `email_verified_at`, `policy_accepted_at`, `policy_version`
+5. Verify user created in target product with `email_verified_at` and `policy_accepted_at`
 6. Login to product app
 
 ## Default Admin Users (development)

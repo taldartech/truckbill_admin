@@ -13,7 +13,6 @@ return new class extends Migration
             $table->foreignId('onboarding_invitation_id')->constrained()->cascadeOnDelete();
             $table->timestamp('email_verified_at')->nullable();
             $table->timestamp('policy_accepted_at')->nullable();
-            $table->string('policy_version')->nullable();
             $table->timestamp('password_set_at')->nullable();
             $table->timestamp('completed_at')->nullable();
             $table->unsignedTinyInteger('otp_attempts')->default(0);

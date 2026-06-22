@@ -10,7 +10,6 @@ erDiagram
     leads ||--o| companies : converts_to
     onboarding_invitations ||--|| onboarding_sessions : tracks
     onboarding_invitations ||--o{ provisioning_logs : provisions
-    policy_versions ||--o{ onboarding_sessions : versioned_by
     users ||--o{ onboarding_invitations : creates
 
     users {
@@ -51,7 +50,6 @@ erDiagram
         bigint onboarding_invitation_id FK
         timestamp email_verified_at
         timestamp policy_accepted_at
-        string policy_version
     }
 
     provisioning_logs {
@@ -68,6 +66,5 @@ Each product maintains its own `users` table with mandatory fields:
 
 - `email_verified_at`
 - `policy_accepted_at`
-- `policy_version`
 
 Provisioned via signed `POST /api/onboarding/create-user`.

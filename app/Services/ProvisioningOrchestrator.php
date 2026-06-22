@@ -39,7 +39,6 @@ class ProvisioningOrchestrator
             'password' => $password,
             'email_verified_at' => $session->email_verified_at?->toIso8601String(),
             'policy_accepted_at' => $session->policy_accepted_at?->toIso8601String(),
-            'policy_version' => $session->policy_version,
             'role' => 'super_admin',
         ];
 

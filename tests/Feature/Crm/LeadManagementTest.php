@@ -3,13 +3,11 @@
 use App\Models\Lead;
 use App\Models\User;
 use Database\Seeders\AdminUserSeeder;
-use Database\Seeders\PolicyVersionSeeder;
 use Database\Seeders\RoleAndPermissionSeeder;
 
 beforeEach(function () {
     $this->seed([
         RoleAndPermissionSeeder::class,
-        PolicyVersionSeeder::class,
         AdminUserSeeder::class,
     ]);
     config(['crm.website_api_key' => 'test-website-key']);

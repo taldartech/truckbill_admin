@@ -3,7 +3,6 @@
 use App\Enums\LeadStatus;
 use App\Models\Lead;
 use App\Models\OnboardingInvitation;
-use App\Models\PolicyVersion;
 use App\Models\User;
 use App\Notifications\OnboardingInvitationNotification;
 use App\Notifications\OnboardingWelcomeNotification;
@@ -11,7 +10,6 @@ use App\Services\OnboardingInvitationService;
 use App\Services\OnboardingSessionService;
 use App\Services\ProvisioningOrchestrator;
 use Database\Seeders\AdminUserSeeder;
-use Database\Seeders\PolicyVersionSeeder;
 use Database\Seeders\RoleAndPermissionSeeder;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
@@ -19,7 +17,6 @@ use Illuminate\Support\Facades\Notification;
 beforeEach(function () {
     $this->seed([
         RoleAndPermissionSeeder::class,
-        PolicyVersionSeeder::class,
         AdminUserSeeder::class,
     ]);
 });
@@ -95,7 +92,6 @@ test('completing onboarding converts the linked lead', function () {
     $session->update([
         'email_verified_at' => now(),
         'policy_accepted_at' => now(),
-        'policy_version' => PolicyVersion::active()?->version,
         'password_hash' => Hash::make('Password1!'),
     ]);
 

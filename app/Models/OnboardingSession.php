@@ -15,7 +15,6 @@ class OnboardingSession extends Model
         'onboarding_invitation_id',
         'email_verified_at',
         'policy_accepted_at',
-        'policy_version',
         'password_set_at',
         'password_hash',
         'completed_at',
