@@ -10,10 +10,10 @@ use App\Models\User;
 use App\Notifications\OnboardingInvitationNotification;
 use App\Services\LeadService;
 use App\Services\OnboardingInvitationService;
+use App\Support\CrmDashboardStats;
 use App\Support\LeadActivityPresenter;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\Rule;
@@ -32,24 +32,7 @@ class LeadWebController extends Controller
     {
         Gate::authorize('viewAny', Lead::class);
 
-        $stats = Cache::remember('crm.dashboard.stats', 300, function () {
-            $byStatus = Lead::query()->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status');
-            $byProduct = Lead::query()->selectRaw('product, count(*) as total')->whereNotNull('product')->groupBy('product')->pluck('total', 'product');
-            $bySource = Lead::query()->selectRaw('source, count(*) as total')->groupBy('source')->pluck('total', 'source');
-
-            return [
-                'total' => Lead::count(),
-                'new' => (int) ($byStatus['new'] ?? 0),
-                'contacted' => (int) ($byStatus['contacted'] ?? 0),
-                'qualified' => (int) ($byStatus['qualified'] ?? 0),
-                'demo_scheduled' => (int) ($byStatus['demo_scheduled'] ?? 0),
-                'proposal_sent' => (int) ($byStatus['proposal_sent'] ?? 0),
-                'converted' => (int) ($byStatus['converted'] ?? 0),
-                'lost' => (int) ($byStatus['lost'] ?? 0),
-                'by_product' => $byProduct,
-                'by_source' => $bySource,
-            ];
-        });
+        $stats = CrmDashboardStats::build();
 
         return Inertia::render('Dashboard', ['stats' => $stats]);
     }
@@ -81,8 +64,8 @@ class LeadWebController extends Controller
             $query->whereIn('assigned_to', $teamIds);
         }
 
-        $sort = $request->string('sort', 'created_at');
-        $direction = $request->string('direction', 'desc') === 'asc' ? 'asc' : 'desc';
+        $sort = $request->input('sort', 'created_at');
+        $direction = $request->input('direction', 'desc') === 'asc' ? 'asc' : 'desc';
         if (in_array($sort, ['name', 'status', 'created_at', 'company_name'], true)) {
             $query->orderBy($sort, $direction);
         } else {

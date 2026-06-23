@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
+import CrmPageHeader from '@/components/crm/CrmPageHeader.vue';
+import CrmPanel from '@/components/crm/CrmPanel.vue';
+import { Button } from '@/components/ui/button';
 import { dashboard } from '@/routes';
 import leadsRoute from '@/routes/leads';
 
@@ -42,14 +45,16 @@ const direction = ref(props.filters.direction ?? 'desc');
 
 function applyFilters() {
     router.get(
-        leadsRoute.index(),
-        {
-            search: search.value || undefined,
-            status: status.value || undefined,
-            product: product.value || undefined,
-            sort: sort.value,
-            direction: direction.value,
-        },
+        leadsRoute.index.url({
+            query: {
+                search: search.value || undefined,
+                status: status.value || undefined,
+                product: product.value || undefined,
+                sort: sort.value,
+                direction: direction.value,
+            },
+        }),
+        {},
         { preserveState: true, replace: true },
     );
 }
@@ -68,79 +73,80 @@ function toggleSort(column: string) {
 <template>
     <Head title="Leads" />
 
-    <div class="flex flex-col gap-4 p-4">
-        <div class="flex flex-wrap items-end justify-between gap-3">
+    <div class="crm-page">
+        <CrmPageHeader title="Leads" description="Manage inbound leads and onboarding invitations">
+            <template #actions>
+                <Button v-if="canCreate" as-child variant="secondary" class="rounded-xl">
+                    <Link :href="leadsRoute.create()">+ New Lead</Link>
+                </Button>
+            </template>
+        </CrmPageHeader>
+
+        <CrmPanel>
             <div class="flex flex-wrap items-end gap-3">
                 <div>
                     <label class="mb-1 block text-sm">Search</label>
                     <input
                         v-model="search"
                         type="search"
-                        class="rounded-md border px-3 py-2 text-sm"
+                        class="crm-input min-w-[220px]"
                         placeholder="Name, email, company..."
                         @keyup.enter="applyFilters"
                     />
                 </div>
                 <div>
                     <label class="mb-1 block text-sm">Status</label>
-                    <select v-model="status" class="rounded-md border px-3 py-2 text-sm" @change="applyFilters">
+                    <select v-model="status" class="crm-input min-w-[160px]" @change="applyFilters">
                         <option value="">All</option>
                         <option v-for="s in statuses" :key="s.value" :value="s.value">{{ s.label }}</option>
                     </select>
                 </div>
                 <div>
                     <label class="mb-1 block text-sm">Product</label>
-                    <select v-model="product" class="rounded-md border px-3 py-2 text-sm" @change="applyFilters">
+                    <select v-model="product" class="crm-input min-w-[160px]" @change="applyFilters">
                         <option value="">All</option>
                         <option v-for="p in products" :key="p.value" :value="p.value">{{ p.label }}</option>
                     </select>
                 </div>
-                <button class="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground" @click="applyFilters">
-                    Filter
-                </button>
+                <button type="button" class="crm-btn-primary" @click="applyFilters">Filter</button>
             </div>
-            <Link
-                v-if="canCreate"
-                :href="leadsRoute.create()"
-                class="rounded-md bg-secondary px-4 py-2 text-sm text-white"
-            >
-                + New Lead
-            </Link>
-        </div>
+        </CrmPanel>
 
-        <div class="overflow-hidden rounded-xl border bg-card">
-            <table class="min-w-full text-sm">
-                <thead class="border-b bg-muted/40 text-left">
-                    <tr>
-                        <th class="cursor-pointer px-4 py-3" @click="toggleSort('name')">Name</th>
-                        <th class="cursor-pointer px-4 py-3" @click="toggleSort('company_name')">Company</th>
-                        <th class="cursor-pointer px-4 py-3" @click="toggleSort('status')">Status</th>
-                        <th class="px-4 py-3">Product</th>
-                        <th class="px-4 py-3">Source</th>
-                        <th class="px-4 py-3">Assigned</th>
-                        <th class="cursor-pointer px-4 py-3" @click="toggleSort('created_at')">Created</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-if="props.leads.data.length === 0">
-                        <td colspan="7" class="px-4 py-8 text-center text-muted-foreground">No leads found.</td>
-                    </tr>
-                    <tr v-for="lead in props.leads.data" :key="lead.id" class="border-b hover:bg-muted/20">
-                        <td class="px-4 py-3">
-                            <Link :href="leadsRoute.show({ lead: lead.id })" class="font-medium text-primary">
-                                {{ lead.name }}
-                            </Link>
-                            <div class="text-muted-foreground text-xs">{{ lead.email }}</div>
-                        </td>
-                        <td class="px-4 py-3">{{ lead.company_name || '—' }}</td>
-                        <td class="px-4 py-3 capitalize">{{ lead.status.replace(/_/g, ' ') }}</td>
-                        <td class="px-4 py-3 capitalize">{{ lead.product || '—' }}</td>
-                        <td class="px-4 py-3">{{ lead.source }}</td>
-                        <td class="px-4 py-3">{{ lead.assignee?.name || '—' }}</td>
-                        <td class="px-4 py-3 text-muted-foreground">{{ new Date(lead.created_at).toLocaleDateString() }}</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+        <CrmPanel flush class="overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="crm-table">
+                    <thead class="crm-table-head">
+                        <tr>
+                            <th class="cursor-pointer" @click="toggleSort('name')">Name</th>
+                            <th class="cursor-pointer" @click="toggleSort('company_name')">Company</th>
+                            <th class="cursor-pointer" @click="toggleSort('status')">Status</th>
+                            <th>Product</th>
+                            <th>Source</th>
+                            <th>Assigned</th>
+                            <th class="cursor-pointer" @click="toggleSort('created_at')">Created</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-if="props.leads.data.length === 0">
+                            <td colspan="7" class="px-4 py-10 text-center text-muted-foreground">No leads found.</td>
+                        </tr>
+                        <tr v-for="lead in props.leads.data" :key="lead.id" class="crm-table-row">
+                            <td>
+                                <Link :href="leadsRoute.show({ lead: lead.id })" class="font-semibold text-primary hover:underline">
+                                    {{ lead.name }}
+                                </Link>
+                                <div class="text-xs text-muted-foreground">{{ lead.email }}</div>
+                            </td>
+                            <td>{{ lead.company_name || '—' }}</td>
+                            <td class="capitalize">{{ lead.status.replace(/_/g, ' ') }}</td>
+                            <td class="capitalize">{{ lead.product || '—' }}</td>
+                            <td>{{ lead.source }}</td>
+                            <td>{{ lead.assignee?.name || '—' }}</td>
+                            <td class="text-muted-foreground">{{ new Date(lead.created_at).toLocaleDateString() }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </CrmPanel>
     </div>
 </template>

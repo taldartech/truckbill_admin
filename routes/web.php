@@ -5,7 +5,11 @@ use App\Http\Controllers\RoleWebController;
 use App\Http\Controllers\UserWebController;
 use Illuminate\Support\Facades\Route;
 
-Route::inertia('/', 'Welcome')->name('home');
+Route::get('/', function () {
+    return auth()->check()
+        ? redirect()->route('dashboard')
+        : redirect()->route('login');
+})->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', [LeadWebController::class, 'dashboard'])->name('dashboard');

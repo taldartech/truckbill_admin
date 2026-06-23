@@ -1,16 +1,14 @@
 <script setup lang="ts">
-import AppLogoIcon from '@/components/AppLogoIcon.vue';
+import { Link } from '@inertiajs/vue3';
+import { dashboard } from '@/routes';
 </script>
 
 <template>
-    <div
-        class="flex aspect-square size-8 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground"
-    >
-        <AppLogoIcon class="size-5 fill-current text-white dark:text-black" />
-    </div>
-    <div class="ml-1 grid flex-1 text-left text-sm">
-        <span class="mb-0.5 truncate leading-tight font-semibold"
-            >Laravel Starter Kit</span
-        >
-    </div>
+    <Link :href="dashboard()" class="flex items-center justify-center px-2 py-3">
+        <img
+            src="/logo.png"
+            alt="TruckBill"
+            class="h-[72px] w-auto max-w-full object-contain"
+        />
+    </Link>
 </template>

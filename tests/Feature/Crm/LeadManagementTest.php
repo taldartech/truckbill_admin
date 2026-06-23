@@ -41,9 +41,49 @@ test('public leads api creates lead', function () {
 test('authenticated user can view dashboard', function () {
     $user = User::query()->where('email', 'admin@truckbill.in')->first();
 
+    Lead::create([
+        'name' => 'Broker Lead',
+        'email' => 'broker-lead@example.com',
+        'source' => 'website_demo',
+        'product' => 'broker',
+        'status' => 'new',
+    ]);
+
     $this->actingAs($user)
         ->get(route('dashboard'))
-        ->assertOk();
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('Dashboard')
+            ->where('stats.by_product.broker', 1)
+            ->where('stats.by_source.website_demo', 1));
+});
+
+test('leads index supports sorting by name', function () {
+    $user = User::query()->where('email', 'admin@truckbill.in')->first();
+
+    Lead::create([
+        'name' => 'Zulu Transport',
+        'email' => 'zulu@example.com',
+        'source' => 'manual',
+        'status' => 'new',
+    ]);
+
+    Lead::create([
+        'name' => 'Alpha Transport',
+        'email' => 'alpha@example.com',
+        'source' => 'manual',
+        'status' => 'new',
+    ]);
+
+    $this->actingAs($user)
+        ->get(route('leads.index', ['sort' => 'name', 'direction' => 'asc']))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('Leads/Index')
+            ->where('leads.data.0.name', 'Alpha Transport')
+            ->where('leads.data.1.name', 'Zulu Transport')
+            ->where('filters.sort', 'name')
+            ->where('filters.direction', 'asc'));
 });
 
 test('sales executive only sees assigned leads', function () {

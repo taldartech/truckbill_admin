@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
+import CrmPageHeader from '@/components/crm/CrmPageHeader.vue';
+import CrmPanel from '@/components/crm/CrmPanel.vue';
+import { Button } from '@/components/ui/button';
 import { dashboard } from '@/routes';
 import usersRoute from '@/routes/users';
 
@@ -32,52 +35,78 @@ const search = ref(props.filters.search ?? '');
 const role = ref(props.filters.role ?? '');
 
 function applyFilters() {
-    router.get(usersRoute.index(), { search: search.value || undefined, role: role.value || undefined }, { preserveState: true, replace: true });
+    router.get(
+        usersRoute.index.url({
+            query: {
+                search: search.value || undefined,
+                role: role.value || undefined,
+            },
+        }),
+        {},
+        { preserveState: true, replace: true },
+    );
 }
 </script>
 
 <template>
     <Head title="Users" />
 
-    <div class="flex flex-col gap-4 p-4">
-        <div class="flex flex-wrap items-end justify-between gap-3">
+    <div class="crm-page">
+        <CrmPageHeader title="Users" description="Manage CRM team members and assignments">
+            <template #actions>
+                <Button as-child variant="secondary" class="rounded-xl">
+                    <Link :href="usersRoute.create()">+ New User</Link>
+                </Button>
+            </template>
+        </CrmPageHeader>
+
+        <CrmPanel>
             <div class="flex flex-wrap gap-3">
-                <input v-model="search" type="search" placeholder="Search users..." class="rounded-md border px-3 py-2 text-sm" @keyup.enter="applyFilters" />
-                <select v-model="role" class="rounded-md border px-3 py-2 text-sm" @change="applyFilters">
+                <input
+                    v-model="search"
+                    type="search"
+                    placeholder="Search users..."
+                    class="crm-input min-w-[240px]"
+                    @keyup.enter="applyFilters"
+                />
+                <select v-model="role" class="crm-input min-w-[180px]" @change="applyFilters">
                     <option value="">All roles</option>
                     <option v-for="r in roles" :key="r" :value="r">{{ r }}</option>
                 </select>
-                <button class="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground" @click="applyFilters">Filter</button>
+                <button type="button" class="crm-btn-primary" @click="applyFilters">Filter</button>
             </div>
-            <Link :href="usersRoute.create()" class="rounded-md bg-secondary px-4 py-2 text-sm text-white">+ New User</Link>
-        </div>
+        </CrmPanel>
 
-        <div class="overflow-hidden rounded-xl border bg-card">
-            <table class="min-w-full text-sm">
-                <thead class="border-b bg-muted/40 text-left">
-                    <tr>
-                        <th class="px-4 py-3">Name</th>
-                        <th class="px-4 py-3">Role</th>
-                        <th class="px-4 py-3">Manager</th>
-                        <th class="px-4 py-3">Leads</th>
-                        <th class="px-4 py-3"></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-for="user in users.data" :key="user.id" class="border-b">
-                        <td class="px-4 py-3">
-                            <div class="font-medium">{{ user.name }}</div>
-                            <div class="text-muted-foreground text-xs">{{ user.email }}</div>
-                        </td>
-                        <td class="px-4 py-3">{{ user.roles[0]?.name || '—' }}</td>
-                        <td class="px-4 py-3">{{ user.manager?.name || '—' }}</td>
-                        <td class="px-4 py-3">{{ user.assigned_leads_count }}</td>
-                        <td class="px-4 py-3 text-right">
-                            <Link :href="usersRoute.edit({ user: user.id })" class="text-primary">Edit</Link>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+        <CrmPanel flush class="overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="crm-table">
+                    <thead class="crm-table-head">
+                        <tr>
+                            <th>Name</th>
+                            <th>Role</th>
+                            <th>Manager</th>
+                            <th>Leads</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="user in users.data" :key="user.id" class="crm-table-row">
+                            <td>
+                                <div class="font-semibold">{{ user.name }}</div>
+                                <div class="text-xs text-muted-foreground">{{ user.email }}</div>
+                            </td>
+                            <td>{{ user.roles[0]?.name || '—' }}</td>
+                            <td>{{ user.manager?.name || '—' }}</td>
+                            <td>{{ user.assigned_leads_count }}</td>
+                            <td class="text-right">
+                                <Link :href="usersRoute.edit({ user: user.id })" class="font-medium text-secondary hover:underline">
+                                    Edit
+                                </Link>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </CrmPanel>
     </div>
 </template>

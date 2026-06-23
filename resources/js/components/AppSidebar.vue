@@ -1,19 +1,14 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
-import { BookOpen, FolderGit2, LayoutGrid, Shield, UserCircle, Users } from '@lucide/vue';
+import { LayoutGrid, Shield, UserCircle, Users } from '@lucide/vue';
 import { computed } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
-import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
-import NavUser from '@/components/NavUser.vue';
 import {
     Sidebar,
     SidebarContent,
     SidebarFooter,
     SidebarHeader,
-    SidebarMenu,
-    SidebarMenuButton,
-    SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
 import leads from '@/routes/leads';
@@ -40,37 +35,22 @@ const mainNavItems = computed<NavItem[]>(() => {
 
     return items;
 });
-
-const footerNavItems: NavItem[] = [
-    {
-        title: 'Documentation',
-        href: '/docs/architecture.md',
-        icon: BookOpen,
-    },
-];
 </script>
 
 <template>
-    <Sidebar collapsible="icon" variant="inset">
-        <SidebarHeader>
-            <SidebarMenu>
-                <SidebarMenuItem>
-                    <SidebarMenuButton size="lg" as-child>
-                        <Link :href="dashboard()">
-                            <AppLogo />
-                        </Link>
-                    </SidebarMenuButton>
-                </SidebarMenuItem>
-            </SidebarMenu>
+    <Sidebar collapsible="icon" variant="sidebar" class="border-r border-sidebar-border shadow-sm">
+        <SidebarHeader class="border-b border-sidebar-border">
+            <AppLogo />
         </SidebarHeader>
 
         <SidebarContent>
             <NavMain :items="mainNavItems" />
         </SidebarContent>
 
-        <SidebarFooter>
-            <NavFooter :items="footerNavItems" />
-            <NavUser />
+        <SidebarFooter class="border-t border-sidebar-border p-3">
+            <p class="text-center text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">
+                TruckBill CRM
+            </p>
         </SidebarFooter>
     </Sidebar>
     <slot />

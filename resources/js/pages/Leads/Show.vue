@@ -79,26 +79,29 @@ function formatActivityTime(value: string) {
 <template>
     <Head :title="`Lead: ${lead.name}`" />
 
-    <div class="grid gap-6 p-4 lg:grid-cols-3">
+    <div class="crm-page grid gap-6 lg:grid-cols-3">
         <div class="space-y-6 lg:col-span-2">
-            <div class="rounded-xl border bg-card p-5">
+            <section class="crm-panel">
+                <div class="crm-panel-body">
                 <h1 class="text-2xl font-semibold">{{ lead.name }}</h1>
                 <p class="text-muted-foreground">{{ lead.email }} · {{ lead.mobile || 'No mobile' }}</p>
                 <p class="mt-2">{{ lead.company_name || 'No company' }}</p>
                 <p class="mt-2 text-sm">Source: {{ lead.source }}</p>
-            </div>
+                </div>
+            </section>
 
-            <div class="rounded-xl border bg-card p-5">
+            <section class="crm-panel">
+                <div class="crm-panel-body">
                 <h2 class="mb-3 font-semibold">Notes</h2>
                 <form class="mb-4 flex gap-2" @submit.prevent="addNote">
                     <textarea
                         v-model="noteForm.body"
-                        class="min-h-20 flex-1 rounded-md border px-3 py-2 text-sm"
+                        class="min-h-20 flex-1 crm-input"
                         placeholder="Add a note..."
                     />
                     <button
                         type="submit"
-                        class="self-start rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground"
+                        class="crm-btn-primary self-start"
                         :disabled="noteForm.processing"
                     >
                         Add
@@ -110,9 +113,11 @@ function formatActivityTime(value: string) {
                         <p class="text-muted-foreground mt-1 text-xs">{{ note.author?.name }}</p>
                     </li>
                 </ul>
-            </div>
+                </div>
+            </section>
 
-            <div class="rounded-xl border bg-card p-5">
+            <section class="crm-panel">
+                <div class="crm-panel-body">
                 <h2 class="mb-3 font-semibold">Activity Timeline</h2>
                 <ul v-if="activities.length > 0" class="space-y-4">
                     <li v-for="activity in activities" :key="activity.id" class="border-l-2 border-primary pl-3">
@@ -121,56 +126,57 @@ function formatActivityTime(value: string) {
                         <p class="text-muted-foreground text-xs">{{ formatActivityTime(activity.created_at) }}</p>
                     </li>
                 </ul>
-                <p v-else class="text-muted-foreground text-sm">No activity recorded yet.</p>
-            </div>
+                <p v-else class="text-sm text-muted-foreground">No activity recorded yet.</p>
+                </div>
+            </section>
         </div>
 
         <div class="space-y-4">
-            <form class="rounded-xl border bg-card p-5 space-y-3" @submit.prevent="saveLead">
+            <form class="crm-panel space-y-3" @submit.prevent="saveLead">
+                <div class="crm-panel-body space-y-3">
                 <h2 class="font-semibold">Manage Lead</h2>
                 <div>
                     <label class="text-sm">Status</label>
-                    <select v-model="updateForm.status" class="mt-1 w-full rounded-md border px-3 py-2 text-sm">
+                    <select v-model="updateForm.status" class="crm-input mt-1 w-full">
                         <option v-for="s in statuses" :key="s.value" :value="s.value">{{ s.label }}</option>
                     </select>
                 </div>
                 <div>
                     <label class="text-sm">Assigned To</label>
-                    <select v-model="updateForm.assigned_to" class="mt-1 w-full rounded-md border px-3 py-2 text-sm">
+                    <select v-model="updateForm.assigned_to" class="crm-input mt-1 w-full">
                         <option :value="null">Unassigned</option>
                         <option v-for="user in users" :key="user.id" :value="user.id">{{ user.name }}</option>
                     </select>
                 </div>
                 <div>
                     <label class="text-sm">Product</label>
-                    <select v-model="updateForm.product" class="mt-1 w-full rounded-md border px-3 py-2 text-sm">
+                    <select v-model="updateForm.product" class="crm-input mt-1 w-full">
                         <option :value="null">None</option>
                         <option v-for="p in products" :key="p.value" :value="p.value">{{ p.label }}</option>
                     </select>
                 </div>
                 <div>
                     <label class="text-sm">Remarks</label>
-                    <textarea v-model="updateForm.remarks" class="mt-1 w-full rounded-md border px-3 py-2 text-sm" />
+                    <textarea v-model="updateForm.remarks" class="crm-input mt-1 min-h-24 w-full" />
                 </div>
-                <button type="submit" class="w-full rounded-md bg-primary py-2 text-sm text-primary-foreground">
-                    Save Changes
-                </button>
+                <button type="submit" class="crm-btn-primary w-full">Save Changes</button>
+                </div>
             </form>
 
-            <form v-if="canInvite" class="rounded-xl border bg-card p-5 space-y-3" @submit.prevent="sendInvite">
+            <form v-if="canInvite" class="crm-panel" @submit.prevent="sendInvite">
+                <div class="crm-panel-body space-y-3">
                 <h2 class="font-semibold">Send Onboarding Invite</h2>
-                <select v-model="inviteForm.product" class="w-full rounded-md border px-3 py-2 text-sm">
+                <select v-model="inviteForm.product" class="crm-input w-full">
                     <option v-for="p in products" :key="p.value" :value="p.value">{{ p.label }}</option>
                 </select>
-                <button type="submit" class="w-full rounded-md bg-secondary py-2 text-sm text-white">
-                    Send Invite
-                </button>
+                <button type="submit" class="crm-btn-secondary w-full">Send Invite</button>
+                </div>
             </form>
 
             <button
                 v-if="canDelete"
                 type="button"
-                class="w-full rounded-md border border-destructive py-2 text-sm text-destructive"
+                class="w-full rounded-xl border border-destructive py-2.5 text-sm font-medium text-destructive transition hover:bg-destructive/5"
                 @click="deleteLead"
             >
                 Delete Lead
