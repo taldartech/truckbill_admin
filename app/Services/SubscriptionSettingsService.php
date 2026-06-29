@@ -15,7 +15,7 @@ class SubscriptionSettingsService
     /** @return array<string, mixed> */
     public function currentSettings(): array
     {
-        $row = SubscriptionSetting::query()->orderByDesc('effective_from')->first();
+        $row = SubscriptionSetting::query()->orderByDesc('effective_from')->orderBy('id', 'desc')->first();
 
         if ($row === null) {
             return self::DEFAULTS;
@@ -37,7 +37,7 @@ class SubscriptionSettingsService
     /** @return array{effective_from: string|null, updated_by: int|null} */
     public function currentMeta(): array
     {
-        $row = SubscriptionSetting::query()->orderByDesc('effective_from')->first();
+        $row = SubscriptionSetting::query()->orderByDesc('effective_from')->orderBy('id', 'desc')->first();
 
         return [
             'effective_from' => $row?->effective_from?->toDateString(),

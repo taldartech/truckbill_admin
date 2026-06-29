@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Head, useForm } from '@inertiajs/vue3';
+import { ref } from 'vue';
 import CrmPageHeader from '@/components/crm/CrmPageHeader.vue';
 import CrmPanel from '@/components/crm/CrmPanel.vue';
 import { Button } from '@/components/ui/button';
@@ -22,23 +23,49 @@ const props = defineProps<{
     effective_from: string | null;
 }>();
 
+const editing = ref(false);
+
 const form = useForm({
     grace_period_days: props.grace_period_days,
     gst_rate_percent: props.gst_rate_percent,
 });
 
+function startEdit() {
+    form.grace_period_days = props.grace_period_days;
+    form.gst_rate_percent = props.gst_rate_percent;
+    form.clearErrors();
+    editing.value = true;
+}
+
+function cancelEdit() {
+    form.grace_period_days = props.grace_period_days;
+    form.gst_rate_percent = props.gst_rate_percent;
+    form.clearErrors();
+    editing.value = false;
+}
+
 function submit() {
-    form.patch('/subscriptions/settings');
+    form.patch('/subscriptions/settings', {
+        onSuccess: () => {
+            editing.value = false;
+        },
+    });
 }
 </script>
 
 <template>
     <Head title="Subscription Settings" />
     <div class="crm-page">
-        <CrmPageHeader
-            title="Subscription settings"
-            description="Global policy applied to all products"
-        />
+        <CrmPageHeader title="Subscription settings" description="Global policy applied to all products">
+            <template #actions>
+                <Button v-if="!editing" type="button" variant="secondary" class="rounded-xl" @click="startEdit">
+                    Edit
+                </Button>
+                <Button v-else type="button" variant="secondary" class="rounded-xl" @click="cancelEdit">
+                    Cancel
+                </Button>
+            </template>
+        </CrmPageHeader>
         <CrmPanel>
             <form class="max-w-md space-y-5" @submit.prevent="submit">
                 <label class="block text-sm font-medium">
@@ -49,6 +76,7 @@ function submit() {
                         min="0"
                         step="1"
                         type="number"
+                        :disabled="!editing"
                     />
                     <span class="mt-1 block text-xs text-muted-foreground">
                         View-only access after subscription expiry. Set to 0 to lock immediately.
@@ -64,6 +92,7 @@ function submit() {
                         max="100"
                         step="0.01"
                         type="number"
+                        :disabled="!editing"
                     />
                     <span class="mt-1 block text-xs text-muted-foreground">
                         Applied to subscription checkout totals.
@@ -74,7 +103,7 @@ function submit() {
                     Current effective from {{ effective_from }}
                 </p>
 
-                <Button type="submit" :disabled="form.processing">Save settings</Button>
+                <Button type="submit" :disabled="!editing || form.processing">Save settings</Button>
             </form>
         </CrmPanel>
     </div>
