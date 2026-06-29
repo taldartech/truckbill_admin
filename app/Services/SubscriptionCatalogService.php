@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\PromoCode;
 use App\Models\SubscriptionPlanCatalog;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 class SubscriptionCatalogService
@@ -12,13 +13,50 @@ class SubscriptionCatalogService
         private readonly SubscriptionSettingsService $settingsService,
     ) {}
 
+    /** @return Collection<int, SubscriptionPlanCatalog> */
+    public function latestCatalogRows(): Collection
+    {
+        return SubscriptionPlanCatalog::query()
+            ->orderByDesc('effective_from')
+            ->orderByDesc('id')
+            ->get()
+            ->unique('product')
+            ->sortBy('product')
+            ->values();
+    }
+
     public function catalogForProduct(string $product): ?SubscriptionPlanCatalog
     {
         return SubscriptionPlanCatalog::query()
             ->where('product', $product)
             ->where('is_active', true)
             ->orderByDesc('effective_from')
+            ->orderByDesc('id')
             ->first();
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    public function storeForProduct(string $product, array $data, ?int $updatedBy = null): ?SubscriptionPlanCatalog
+    {
+        $current = SubscriptionPlanCatalog::query()
+            ->where('product', $product)
+            ->orderByDesc('effective_from')
+            ->orderByDesc('id')
+            ->first();
+
+        $attributes = $this->normalizedCatalogData($data);
+
+        if ($current !== null && $this->catalogDataEquals($current, $attributes)) {
+            return null;
+        }
+
+        return SubscriptionPlanCatalog::create(array_merge($attributes, [
+            'product' => $product,
+            'effective_from' => now()->toDateString(),
+            'updated_by' => $updatedBy,
+        ]));
     }
 
     public function catalogPayload(string $product): array
@@ -82,5 +120,48 @@ class SubscriptionCatalogService
         PromoCode::query()
             ->whereRaw('LOWER(code) = ?', [Str::lower($code)])
             ->increment('uses_count');
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private function normalizedCatalogData(array $data): array
+    {
+        return [
+            'base_price' => round((float) $data['base_price'], 2),
+            'included_branches' => (int) $data['included_branches'],
+            'users_per_branch' => (int) $data['users_per_branch'],
+            'included_lr_credits' => (int) $data['included_lr_credits'],
+            'included_trucks' => (int) $data['included_trucks'],
+            'addon_branch_price' => round((float) $data['addon_branch_price'], 2),
+            'addon_user_price' => round((float) $data['addon_user_price'], 2),
+            'addon_truck_price' => round((float) $data['addon_truck_price'], 2),
+            'is_active' => (bool) ($data['is_active'] ?? true),
+        ];
+    }
+
+    /** @param  array<string, mixed>  $data */
+    private function catalogDataEquals(SubscriptionPlanCatalog $current, array $data): bool
+    {
+        $currentData = $this->normalizedCatalogData([
+            'base_price' => $current->base_price,
+            'included_branches' => $current->included_branches,
+            'users_per_branch' => $current->users_per_branch,
+            'included_lr_credits' => $current->included_lr_credits,
+            'included_trucks' => $current->included_trucks,
+            'addon_branch_price' => $current->addon_branch_price,
+            'addon_user_price' => $current->addon_user_price,
+            'addon_truck_price' => $current->addon_truck_price,
+            'is_active' => $current->is_active,
+        ]);
+
+        foreach ($currentData as $field => $value) {
+            if ($currentData[$field] !== $data[$field]) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

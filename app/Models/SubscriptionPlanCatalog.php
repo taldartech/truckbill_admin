@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class SubscriptionPlanCatalog extends Model
 {
@@ -20,6 +21,7 @@ class SubscriptionPlanCatalog extends Model
         'addon_truck_price',
         'is_active',
         'effective_from',
+        'updated_by',
     ];
 
     protected function casts(): array
@@ -48,5 +50,10 @@ class SubscriptionPlanCatalog extends Model
             'addon_truck_price' => (float) $this->addon_truck_price,
             'effective_from' => $this->effective_from?->toDateString(),
         ];
+    }
+
+    public function updatedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'updated_by');
     }
 }

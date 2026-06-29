@@ -15,7 +15,7 @@ class SubscriptionSettingsService
     /** @return array<string, mixed> */
     public function currentSettings(): array
     {
-        $row = SubscriptionSetting::query()->orderByDesc('effective_from')->orderBy('id', 'desc')->first();
+        $row = SubscriptionSetting::query()->orderByDesc('effective_from')->orderByDesc('id')->first();
 
         if ($row === null) {
             return self::DEFAULTS;
@@ -37,7 +37,7 @@ class SubscriptionSettingsService
     /** @return array{effective_from: string|null, updated_by: int|null} */
     public function currentMeta(): array
     {
-        $row = SubscriptionSetting::query()->orderByDesc('effective_from')->orderBy('id', 'desc')->first();
+        $row = SubscriptionSetting::query()->orderByDesc('effective_from')->orderByDesc('id')->first();
 
         return [
             'effective_from' => $row?->effective_from?->toDateString(),
@@ -48,14 +48,28 @@ class SubscriptionSettingsService
     /**
      * @param  array<string, mixed>  $settings
      */
-    public function store(array $settings, ?int $updatedBy = null): SubscriptionSetting
+    public function store(array $settings, ?int $updatedBy = null): ?SubscriptionSetting
     {
-        $current = $this->currentSettings();
+        $merged = array_merge($this->currentSettings(), [
+            'grace_period_days' => (int) $settings['grace_period_days'],
+            'gst_rate_percent' => round((float) $settings['gst_rate_percent'], 2),
+        ]);
+
+        if ($this->settingsEqual($this->currentSettings(), $merged)) {
+            return null;
+        }
 
         return SubscriptionSetting::create([
-            'settings' => array_merge($current, $settings),
+            'settings' => $merged,
             'effective_from' => now()->toDateString(),
             'updated_by' => $updatedBy,
         ]);
+    }
+
+    /** @param  array<string, mixed>  $a @param  array<string, mixed>  $b */
+    private function settingsEqual(array $a, array $b): bool
+    {
+        return (int) $a['grace_period_days'] === (int) $b['grace_period_days']
+            && round((float) $a['gst_rate_percent'], 2) === round((float) $b['gst_rate_percent'], 2);
     }
 }

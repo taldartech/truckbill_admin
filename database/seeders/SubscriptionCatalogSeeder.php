@@ -49,13 +49,18 @@ class SubscriptionCatalogSeeder extends Seeder
         ];
 
         foreach ($defaults as $row) {
-            SubscriptionPlanCatalog::updateOrCreate(
-                ['product' => $row['product']],
-                array_merge($row, [
-                    'is_active' => true,
-                    'effective_from' => $effectiveFrom,
-                ])
-            );
+            $exists = SubscriptionPlanCatalog::query()
+                ->where('product', $row['product'])
+                ->exists();
+
+            if ($exists) {
+                continue;
+            }
+
+            SubscriptionPlanCatalog::create(array_merge($row, [
+                'is_active' => true,
+                'effective_from' => $effectiveFrom,
+            ]));
         }
 
         if (! SubscriptionSetting::query()->exists()) {

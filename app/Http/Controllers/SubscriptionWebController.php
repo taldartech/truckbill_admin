@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Enums\Product;
 use App\Models\PromoCode;
-use App\Models\SubscriptionPlanCatalog;
 use App\Services\ProductApiClient;
+use App\Services\SubscriptionCatalogService;
 use App\Services\SubscriptionSettingsService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,13 +17,14 @@ class SubscriptionWebController extends Controller
 {
     public function __construct(
         private readonly ProductApiClient $productApi,
+        private readonly SubscriptionCatalogService $catalogService,
         private readonly SubscriptionSettingsService $settingsService,
     ) {}
 
     public function pricing(): Response
     {
         return Inertia::render('Subscriptions/Pricing', [
-            'catalog' => SubscriptionPlanCatalog::query()->orderBy('product')->get(),
+            'catalog' => $this->catalogService->latestCatalogRows(),
             'products' => collect(Product::cases())->map(fn (Product $p) => [
                 'value' => $p->value,
                 'label' => $p->label(),
@@ -33,8 +34,6 @@ class SubscriptionWebController extends Controller
 
     public function updatePricing(Request $request, string $product): RedirectResponse
     {
-        $catalog = SubscriptionPlanCatalog::query()->where('product', $product)->firstOrFail();
-
         $validated = $request->validate([
             'base_price' => ['required', 'numeric', 'min:0'],
             'included_branches' => ['required', 'integer', 'min:1'],
@@ -47,9 +46,12 @@ class SubscriptionWebController extends Controller
             'is_active' => ['sometimes', 'boolean'],
         ]);
 
-        $catalog->update($validated);
+        $row = $this->catalogService->storeForProduct($product, $validated, $request->user()?->id);
 
-        return back()->with('success', 'Pricing updated.');
+        return back()->with(
+            'success',
+            $row ? 'Pricing updated.' : 'No changes to save.',
+        );
     }
 
     public function settings(): Response
@@ -71,9 +73,12 @@ class SubscriptionWebController extends Controller
             'gst_rate_percent' => ['required', 'numeric', 'min:0', 'max:100'],
         ]);
 
-        $this->settingsService->store($validated, $request->user()?->id);
+        $row = $this->settingsService->store($validated, $request->user()?->id);
 
-        return back()->with('success', 'Subscription settings updated.');
+        return back()->with(
+            'success',
+            $row ? 'Subscription settings updated.' : 'No changes to save.',
+        );
     }
 
     public function promoCodes(): Response
