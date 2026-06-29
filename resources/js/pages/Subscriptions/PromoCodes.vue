@@ -84,11 +84,12 @@ function formatValidPeriod(promo: { start_date: string; end_date: string | null 
                             <th>Uses</th>
                             <th>Max usage</th>
                             <th>Status</th>
+                            <th></th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr v-if="promo_codes.length === 0">
-                            <td colspan="7" class="px-4 py-10 text-center text-muted-foreground">No promo codes yet.</td>
+                            <td colspan="8" class="px-4 py-10 text-center text-muted-foreground">No promo codes yet.</td>
                         </tr>
                         <tr v-for="promo in promo_codes" :key="promo.id" class="crm-table-row">
                             <td class="font-semibold">{{ promo.code }}</td>
@@ -106,6 +107,14 @@ function formatValidPeriod(promo: { start_date: string; end_date: string | null 
                                 >
                                     {{ promo.is_active ? 'Active' : 'Inactive' }}
                                 </span>
+                            </td>
+                            <td>
+                                <Link
+                                    :href="subscriptionsRoute.promoCodes.edit({ promoCode: promo.id })"
+                                    class="font-medium text-secondary hover:underline"
+                                >
+                                    Edit
+                                </Link>
                             </td>
                         </tr>
                     </tbody>

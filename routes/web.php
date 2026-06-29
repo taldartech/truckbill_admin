@@ -42,6 +42,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('promo-codes', [SubscriptionWebController::class, 'promoCodes'])->name('promo-codes');
         Route::get('promo-codes/create', [SubscriptionWebController::class, 'createPromoCode'])->name('promo-codes.create');
         Route::post('promo-codes', [SubscriptionWebController::class, 'storePromoCode'])->name('promo-codes.store');
+        Route::get('promo-codes/{promoCode}/edit', [SubscriptionWebController::class, 'editPromoCode'])->name('promo-codes.edit');
         Route::patch('promo-codes/{promoCode}', [SubscriptionWebController::class, 'updatePromoCode'])->name('promo-codes.update');
         Route::get('companies', [SubscriptionWebController::class, 'companies'])->name('companies');
         Route::get('companies/{product}/{id}', [SubscriptionWebController::class, 'companyShow'])->name('companies.show');

@@ -117,6 +117,29 @@ class SubscriptionWebController extends Controller
         return redirect()->route('subscriptions.promo-codes')->with('success', 'Promo code created.');
     }
 
+    public function editPromoCode(PromoCode $promoCode): Response
+    {
+        return Inertia::render('Subscriptions/PromoCodeEdit', [
+            'promo_code' => [
+                'id' => $promoCode->id,
+                'code' => $promoCode->code,
+                'discount_type' => $promoCode->discount_type,
+                'discount_value' => (float) $promoCode->discount_value,
+                'applicable_products' => $promoCode->applicable_products ?? [],
+                'start_date' => $promoCode->start_date->toDateString(),
+                'end_date' => $promoCode->end_date?->toDateString(),
+                'max_uses' => $promoCode->max_uses,
+                'uses_count' => $promoCode->uses_count,
+                'is_active' => $promoCode->is_active,
+            ],
+            'products' => $this->productOptions(),
+            'discount_types' => [
+                ['value' => 'percentage', 'label' => 'Percentage'],
+                ['value' => 'absolute', 'label' => 'Absolute (₹)'],
+            ],
+        ]);
+    }
+
     public function updatePromoCode(Request $request, PromoCode $promoCode): RedirectResponse
     {
         $validated = $request->validate([
@@ -135,7 +158,7 @@ class SubscriptionWebController extends Controller
             'code' => strtoupper($validated['code']),
         ]));
 
-        return back()->with('success', 'Promo code updated.');
+        return redirect()->route('subscriptions.promo-codes')->with('success', 'Promo code updated.');
     }
 
     public function companies(): Response
