@@ -5,10 +5,10 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class GstSetting extends Model
+class SubscriptionSetting extends Model
 {
     protected $fillable = [
-        'rate_percent',
+        'settings',
         'effective_from',
         'updated_by',
     ];
@@ -16,7 +16,7 @@ class GstSetting extends Model
     protected function casts(): array
     {
         return [
-            'rate_percent' => 'decimal:2',
+            'settings' => 'array',
             'effective_from' => 'date',
         ];
     }

@@ -2,13 +2,16 @@
 
 namespace App\Services;
 
-use App\Models\GstSetting;
 use App\Models\PromoCode;
 use App\Models\SubscriptionPlanCatalog;
 use Illuminate\Support\Str;
 
 class SubscriptionCatalogService
 {
+    public function __construct(
+        private readonly SubscriptionSettingsService $settingsService,
+    ) {}
+
     public function catalogForProduct(string $product): ?SubscriptionPlanCatalog
     {
         return SubscriptionPlanCatalog::query()
@@ -16,13 +19,6 @@ class SubscriptionCatalogService
             ->where('is_active', true)
             ->orderByDesc('effective_from')
             ->first();
-    }
-
-    public function currentGstRate(): float
-    {
-        $setting = GstSetting::query()->orderByDesc('effective_from')->first();
-
-        return $setting ? (float) $setting->rate_percent : 18.0;
     }
 
     public function catalogPayload(string $product): array
@@ -33,9 +29,12 @@ class SubscriptionCatalogService
             abort(404, 'Subscription catalog not found for product.');
         }
 
+        $settings = $this->settingsService->currentSettings();
+
         return [
             'catalog' => $catalog->toCatalogArray(),
-            'gst_rate_percent' => $this->currentGstRate(),
+            'gst_rate_percent' => (float) $settings['gst_rate_percent'],
+            'settings' => $settings,
         ];
     }
 

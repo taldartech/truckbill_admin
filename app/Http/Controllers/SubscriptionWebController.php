@@ -3,10 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Enums\Product;
-use App\Models\GstSetting;
 use App\Models\PromoCode;
 use App\Models\SubscriptionPlanCatalog;
 use App\Services\ProductApiClient;
+use App\Services\SubscriptionSettingsService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -16,7 +16,8 @@ use Inertia\Response;
 class SubscriptionWebController extends Controller
 {
     public function __construct(
-        private readonly ProductApiClient $productApi
+        private readonly ProductApiClient $productApi,
+        private readonly SubscriptionSettingsService $settingsService,
     ) {}
 
     public function pricing(): Response
@@ -51,29 +52,28 @@ class SubscriptionWebController extends Controller
         return back()->with('success', 'Pricing updated.');
     }
 
-    public function gst(): Response
+    public function settings(): Response
     {
-        $setting = GstSetting::query()->orderByDesc('effective_from')->first();
+        $current = $this->settingsService->currentSettings();
+        $meta = $this->settingsService->currentMeta();
 
-        return Inertia::render('Subscriptions/Gst', [
-            'rate_percent' => $setting ? (float) $setting->rate_percent : 18.0,
-            'effective_from' => $setting?->effective_from?->toDateString(),
+        return Inertia::render('Subscriptions/Settings', [
+            'grace_period_days' => (int) $current['grace_period_days'],
+            'gst_rate_percent' => (float) $current['gst_rate_percent'],
+            'effective_from' => $meta['effective_from'],
         ]);
     }
 
-    public function updateGst(Request $request): RedirectResponse
+    public function updateSettings(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'rate_percent' => ['required', 'numeric', 'min:0', 'max:100'],
+            'grace_period_days' => ['required', 'integer', 'min:0', 'max:365'],
+            'gst_rate_percent' => ['required', 'numeric', 'min:0', 'max:100'],
         ]);
 
-        GstSetting::create([
-            'rate_percent' => $validated['rate_percent'],
-            'effective_from' => now()->toDateString(),
-            'updated_by' => $request->user()?->id,
-        ]);
+        $this->settingsService->store($validated, $request->user()?->id);
 
-        return back()->with('success', 'GST rate updated.');
+        return back()->with('success', 'Subscription settings updated.');
     }
 
     public function promoCodes(): Response

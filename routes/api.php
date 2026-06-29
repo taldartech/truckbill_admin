@@ -1,7 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\Admin\DashboardController;
-use App\Http\Controllers\Api\Admin\GstSettingsController;
+use App\Http\Controllers\Api\Admin\SubscriptionSettingsController;
 use App\Http\Controllers\Api\Admin\InvitationController;
 use App\Http\Controllers\Api\Admin\LeadController;
 use App\Http\Controllers\Api\Admin\PromoCodeController;
@@ -53,8 +53,8 @@ Route::middleware([HandleCors::class])->group(function (): void {
 
         Route::get('subscription-catalog', [SubscriptionCatalogController::class, 'index']);
         Route::patch('subscription-catalog/{product}', [SubscriptionCatalogController::class, 'update']);
-        Route::get('gst-settings', [GstSettingsController::class, 'show']);
-        Route::patch('gst-settings', [GstSettingsController::class, 'update']);
+        Route::get('subscription-settings', [SubscriptionSettingsController::class, 'show']);
+        Route::patch('subscription-settings', [SubscriptionSettingsController::class, 'update']);
         Route::get('promo-codes', [PromoCodeController::class, 'index']);
         Route::post('promo-codes', [PromoCodeController::class, 'store']);
         Route::patch('promo-codes/{promoCode}', [PromoCodeController::class, 'update']);

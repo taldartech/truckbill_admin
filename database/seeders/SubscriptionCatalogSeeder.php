@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Models\GstSetting;
 use App\Models\SubscriptionPlanCatalog;
+use App\Models\SubscriptionSetting;
 use Illuminate\Database\Seeder;
 
 class SubscriptionCatalogSeeder extends Seeder
@@ -58,9 +58,12 @@ class SubscriptionCatalogSeeder extends Seeder
             );
         }
 
-        if (! GstSetting::query()->exists()) {
-            GstSetting::create([
-                'rate_percent' => 18,
+        if (! SubscriptionSetting::query()->exists()) {
+            SubscriptionSetting::create([
+                'settings' => [
+                    'grace_period_days' => 7,
+                    'gst_rate_percent' => 18.0,
+                ],
                 'effective_from' => $effectiveFrom,
             ]);
         }

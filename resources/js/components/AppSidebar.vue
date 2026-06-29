@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
-import { Building2, IndianRupee, LayoutGrid, Percent, Shield, Ticket, UserCircle, Users } from '@lucide/vue';
+import { Building2, IndianRupee, LayoutGrid, Settings, Shield, Ticket, UserCircle, Users } from '@lucide/vue';
 import { computed } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
 import NavMain from '@/components/NavMain.vue';
@@ -39,7 +39,7 @@ const mainNavItems = computed<NavItem[]>(() => {
 
 const subscriptionNavItems = computed<NavItem[]>(() => [
     { title: 'Pricing', href: subscriptionsRoute.pricing(), icon: IndianRupee, matchPrefix: true },
-    { title: 'GST', href: subscriptionsRoute.gst(), icon: Percent, matchPrefix: true },
+    { title: 'Settings', href: '/subscriptions/settings', icon: Settings, matchPrefix: true },
     { title: 'Promo Codes', href: subscriptionsRoute.promoCodes(), icon: Ticket, matchPrefix: true },
     { title: 'Companies', href: subscriptionsRoute.companies(), icon: Building2, matchPrefix: true },
 ]);

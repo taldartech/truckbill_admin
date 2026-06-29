@@ -1,10 +1,11 @@
 # Subscription system
 
-Unified annual subscriptions are managed from **Admin** (pricing catalog, GST, promo codes). Each product stores subscription state locally.
+Unified annual subscriptions are managed from **Admin** (pricing catalog, global settings, promo codes). Each product stores subscription state locally.
 
 ## Admin
 
-- Web UI: `/subscriptions/pricing`, `/subscriptions/gst`, `/subscriptions/promo-codes`, `/subscriptions/companies`
+- Web UI: `/subscriptions/pricing`, `/subscriptions/settings`, `/subscriptions/promo-codes`, `/subscriptions/companies`
+- Global settings (`subscription_settings`): `grace_period_days`, `gst_rate_percent`
 - Product APIs (HMAC): `GET /api/v1/products/{product}/subscription-catalog`, `POST /api/v1/products/{product}/promo-codes/validate`
 
 ## Products
@@ -15,7 +16,8 @@ Unified annual subscriptions are managed from **Admin** (pricing catalog, GST, p
 - Dates: `starts_on`, `ends_on`, `trial_ends_on` are **date-only** fields
 - Checkout (super_admin): `/subscription` with live quote API
 - Admin proxy API: `/api/admin/subscriptions/*` (HMAC)
+- Access tiers: **full** (active), **grace** (read-only after expiry), **locked** (after grace period)
 
 ## Scheduler
 
-`subscription:apply-upcoming` runs daily to apply pending upcoming plans when `ends_on < today()`.
+`subscription:apply-upcoming` runs daily as a safety net. Pending renewals are also applied on first request after expiry.

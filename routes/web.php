@@ -37,8 +37,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('subscriptions')->name('subscriptions.')->group(function () {
         Route::get('pricing', [SubscriptionWebController::class, 'pricing'])->name('pricing');
         Route::patch('pricing/{product}', [SubscriptionWebController::class, 'updatePricing'])->name('pricing.update');
-        Route::get('gst', [SubscriptionWebController::class, 'gst'])->name('gst');
-        Route::patch('gst', [SubscriptionWebController::class, 'updateGst'])->name('gst.update');
+        Route::get('settings', [SubscriptionWebController::class, 'settings'])->name('settings');
+        Route::patch('settings', [SubscriptionWebController::class, 'updateSettings'])->name('settings.update');
         Route::get('promo-codes', [SubscriptionWebController::class, 'promoCodes'])->name('promo-codes');
         Route::get('promo-codes/create', [SubscriptionWebController::class, 'createPromoCode'])->name('promo-codes.create');
         Route::post('promo-codes', [SubscriptionWebController::class, 'storePromoCode'])->name('promo-codes.store');
