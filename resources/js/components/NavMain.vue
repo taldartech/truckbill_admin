@@ -12,21 +12,30 @@ import type { NavItem } from '@/types';
 
 defineProps<{
     items: NavItem[];
+    label?: string;
 }>();
 
-const { isCurrentUrl } = useCurrentUrl();
+const { isCurrentUrl, isCurrentOrParentUrl } = useCurrentUrl();
+
+function isActive(item: NavItem): boolean {
+    if (item.matchPrefix) {
+        return isCurrentOrParentUrl(item.href);
+    }
+
+    return isCurrentUrl(item.href);
+}
 </script>
 
 <template>
     <SidebarGroup class="px-2 py-2">
         <SidebarGroupLabel class="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-            Main Menu
+            {{ label ?? 'Main Menu' }}
         </SidebarGroupLabel>
         <SidebarMenu>
             <SidebarMenuItem v-for="item in items" :key="item.title">
                 <SidebarMenuButton
                     as-child
-                    :is-active="isCurrentUrl(item.href)"
+                    :is-active="isActive(item)"
                     :tooltip="item.title"
                     class="h-10 rounded-none px-3"
                 >

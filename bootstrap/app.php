@@ -21,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'website.api' => \App\Http\Middleware\VerifyWebsiteApiKey::class,
             'cors' => \App\Http\Middleware\HandleCors::class,
+            'product.signature' => \App\Http\Middleware\VerifyProductSignature::class,
         ]);
 
         $middleware->web(append: [

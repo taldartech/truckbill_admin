@@ -11,4 +11,6 @@ export type NavItem = {
     href: NonNullable<InertiaLinkProps['href']>;
     icon?: LucideIcon;
     isActive?: boolean;
+    /** Highlight when current URL starts with this item's path (for nested pages). */
+    matchPrefix?: boolean;
 };

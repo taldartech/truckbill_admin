@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\LeadWebController;
 use App\Http\Controllers\RoleWebController;
+use App\Http\Controllers\SubscriptionWebController;
 use App\Http\Controllers\UserWebController;
 use Illuminate\Support\Facades\Route;
 
@@ -32,6 +33,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('roles', [RoleWebController::class, 'index'])->name('roles.index');
     Route::patch('roles/{role}', [RoleWebController::class, 'update'])->name('roles.update');
+
+    Route::prefix('subscriptions')->name('subscriptions.')->group(function () {
+        Route::get('pricing', [SubscriptionWebController::class, 'pricing'])->name('pricing');
+        Route::patch('pricing/{product}', [SubscriptionWebController::class, 'updatePricing'])->name('pricing.update');
+        Route::get('gst', [SubscriptionWebController::class, 'gst'])->name('gst');
+        Route::patch('gst', [SubscriptionWebController::class, 'updateGst'])->name('gst.update');
+        Route::get('promo-codes', [SubscriptionWebController::class, 'promoCodes'])->name('promo-codes');
+        Route::get('promo-codes/create', [SubscriptionWebController::class, 'createPromoCode'])->name('promo-codes.create');
+        Route::post('promo-codes', [SubscriptionWebController::class, 'storePromoCode'])->name('promo-codes.store');
+        Route::patch('promo-codes/{promoCode}', [SubscriptionWebController::class, 'updatePromoCode'])->name('promo-codes.update');
+        Route::get('companies', [SubscriptionWebController::class, 'companies'])->name('companies');
+        Route::get('companies/{product}/{id}', [SubscriptionWebController::class, 'companyShow'])->name('companies.show');
+        Route::patch('companies/{product}/{id}', [SubscriptionWebController::class, 'companyUpdate'])->name('companies.update');
+    });
 });
 
 require __DIR__.'/settings.php';

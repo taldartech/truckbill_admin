@@ -7,7 +7,6 @@ use App\Enums\Product;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Lead extends Model
 {
@@ -53,10 +52,5 @@ class Lead extends Model
     public function invitations(): HasMany
     {
         return $this->hasMany(OnboardingInvitation::class);
-    }
-
-    public function company(): HasOne
-    {
-        return $this->hasOne(Company::class);
     }
 }

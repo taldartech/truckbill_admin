@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
-import { LayoutGrid, Shield, UserCircle, Users } from '@lucide/vue';
+import { Building2, IndianRupee, LayoutGrid, Percent, Shield, Ticket, UserCircle, Users } from '@lucide/vue';
 import { computed } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
 import NavMain from '@/components/NavMain.vue';
@@ -13,6 +13,7 @@ import {
 import { dashboard } from '@/routes';
 import leads from '@/routes/leads';
 import rolesRoute from '@/routes/roles';
+import subscriptionsRoute from '@/routes/subscriptions';
 import usersRoute from '@/routes/users';
 import type { NavItem } from '@/types';
 
@@ -35,6 +36,13 @@ const mainNavItems = computed<NavItem[]>(() => {
 
     return items;
 });
+
+const subscriptionNavItems = computed<NavItem[]>(() => [
+    { title: 'Pricing', href: subscriptionsRoute.pricing(), icon: IndianRupee, matchPrefix: true },
+    { title: 'GST', href: subscriptionsRoute.gst(), icon: Percent, matchPrefix: true },
+    { title: 'Promo Codes', href: subscriptionsRoute.promoCodes(), icon: Ticket, matchPrefix: true },
+    { title: 'Companies', href: subscriptionsRoute.companies(), icon: Building2, matchPrefix: true },
+]);
 </script>
 
 <template>
@@ -45,6 +53,7 @@ const mainNavItems = computed<NavItem[]>(() => {
 
         <SidebarContent>
             <NavMain :items="mainNavItems" />
+            <NavMain label="Subscriptions" :items="subscriptionNavItems" />
         </SidebarContent>
 
         <SidebarFooter class="border-t border-sidebar-border p-3">
