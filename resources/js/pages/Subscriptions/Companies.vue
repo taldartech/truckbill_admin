@@ -4,6 +4,7 @@ import CrmPageHeader from '@/components/crm/CrmPageHeader.vue';
 import CrmPanel from '@/components/crm/CrmPanel.vue';
 import { dashboard } from '@/routes';
 import subscriptionsRoute from '@/routes/subscriptions';
+import { formatDate } from '@/lib/dates';
 
 defineOptions({
     layout: {
@@ -26,14 +27,6 @@ defineProps<{
     }>;
     products: Array<{ value: string; label: string }>;
 }>();
-
-function formatDate(value?: string) {
-    if (!value) {
-        return '—';
-    }
-
-    return new Date(value).toLocaleDateString();
-}
 
 function formatStatus(status?: string) {
     if (!status) {
@@ -76,7 +69,7 @@ function formatStatus(status?: string) {
                                     :href="subscriptionsRoute.companies.show({ product: row.product, id: row.id })"
                                     class="font-medium text-primary hover:underline"
                                 >
-                                    View
+                                    Manage
                                 </Link>
                             </td>
                         </tr>

@@ -7,6 +7,7 @@ use App\Models\PromoCode;
 use App\Services\ProductApiClient;
 use App\Services\SubscriptionCatalogService;
 use App\Services\SubscriptionSettingsService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -190,19 +191,22 @@ class SubscriptionWebController extends Controller
         ]);
     }
 
-    public function companyShow(string $product, int $id): Response
+    public function companyShow(string $product, string $id): Response
     {
         $productEnum = Product::from($product);
         $detail = $this->productApi->get("/api/admin/subscriptions/{$id}", $productEnum);
+        $catalog = $this->catalogService->catalogForProduct($product);
 
         return Inertia::render('Subscriptions/CompanyShow', [
             'product' => $product,
             'product_label' => $productEnum->label(),
             'subscription' => $detail,
+            'catalog' => $catalog?->toCatalogArray(),
+            'features' => $this->productFeatures($productEnum),
         ]);
     }
 
-    public function companyUpdate(Request $request, string $product, int $id): RedirectResponse
+    public function companyUpdate(Request $request, string $product, string $id): RedirectResponse
     {
         $productEnum = Product::from($product);
 
@@ -210,16 +214,93 @@ class SubscriptionWebController extends Controller
             'status' => ['sometimes', Rule::in(['trial', 'active', 'expired', 'cancelled'])],
             'starts_on' => ['sometimes', 'date'],
             'ends_on' => ['sometimes', 'date'],
+            'trial_ends_on' => ['sometimes', 'nullable', 'date'],
+            'included_branches' => ['sometimes', 'integer', 'min:1'],
+            'users_per_branch' => ['sometimes', 'integer', 'min:1'],
+            'included_lr_credits' => ['sometimes', 'integer', 'min:0'],
+            'included_trucks' => ['sometimes', 'integer', 'min:0'],
             'addon_branches' => ['sometimes', 'integer', 'min:0'],
             'addon_users' => ['sometimes', 'integer', 'min:0'],
             'addon_trucks' => ['sometimes', 'integer', 'min:0'],
             'addon_lr_credits' => ['sometimes', 'integer', 'min:0'],
             'lr_credits_remaining' => ['sometimes', 'integer', 'min:0'],
+            'notes' => ['sometimes', 'nullable', 'string', 'max:500'],
         ]);
 
-        $this->productApi->patch("/api/admin/subscriptions/{$id}", $productEnum, $validated);
+        try {
+            $this->productApi->patch("/api/admin/subscriptions/{$id}", $productEnum, $validated);
+        } catch (\RuntimeException $exception) {
+            if (str_contains($exception->getMessage(), '422')) {
+                return back()->with('success', 'No changes to save.');
+            }
+
+            throw $exception;
+        }
 
         return back()->with('success', 'Subscription updated.');
+    }
+
+    public function companyQuote(Request $request, string $product, string $id): JsonResponse
+    {
+        $productEnum = Product::from($product);
+
+        $validated = $request->validate([
+            'purchase_type' => ['required', Rule::in(['renewal', 'addon'])],
+            'addon_branches' => ['nullable', 'integer', 'min:0'],
+            'addon_users' => ['nullable', 'integer', 'min:0'],
+            'addon_trucks' => ['nullable', 'integer', 'min:0'],
+            'addon_lr_credits' => ['nullable', 'integer', 'min:0'],
+        ]);
+
+        return response()->json(
+            $this->productApi->post("/api/admin/subscriptions/{$id}/quote", $productEnum, $validated),
+        );
+    }
+
+    public function companyOfflinePayment(Request $request, string $product, string $id): RedirectResponse
+    {
+        $productEnum = Product::from($product);
+
+        $validated = $request->validate([
+            'purchase_type' => ['required', Rule::in(['renewal', 'addon'])],
+            'addon_branches' => ['nullable', 'integer', 'min:0'],
+            'addon_users' => ['nullable', 'integer', 'min:0'],
+            'addon_trucks' => ['nullable', 'integer', 'min:0'],
+            'addon_lr_credits' => ['nullable', 'integer', 'min:0'],
+            'reference' => ['nullable', 'string', 'max:100'],
+            'notes' => ['nullable', 'string', 'max:500'],
+            'force' => ['sometimes', 'boolean'],
+        ]);
+
+        $validated['admin_user_id'] = $request->user()?->id;
+
+        try {
+            $this->productApi->post("/api/admin/subscriptions/{$id}/offline-payment", $productEnum, $validated);
+        } catch (\RuntimeException $exception) {
+            if (str_contains($exception->getMessage(), '422')) {
+                $message = 'Unable to record offline payment.';
+                if (preg_match('/Product API error: 422 (.+)/', $exception->getMessage(), $matches)) {
+                    $payload = json_decode($matches[1], true);
+                    $message = $payload['message'] ?? $message;
+                }
+
+                return back()->withErrors(['offline' => $message]);
+            }
+
+            throw $exception;
+        }
+
+        return back()->with('success', 'Offline payment recorded and plan updated.');
+    }
+
+    /** @return array{lr_credits: bool, trucks: bool} */
+    private function productFeatures(Product $product): array
+    {
+        return match ($product) {
+            Product::Broker => ['lr_credits' => true, 'trucks' => false],
+            Product::Parchun => ['lr_credits' => false, 'trucks' => false],
+            Product::OwnFleet => ['lr_credits' => false, 'trucks' => true],
+        };
     }
 
     /** @return list<array{value: string, label: string}> */

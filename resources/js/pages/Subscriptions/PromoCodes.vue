@@ -5,6 +5,7 @@ import CrmPanel from '@/components/crm/CrmPanel.vue';
 import { Button } from '@/components/ui/button';
 import { dashboard } from '@/routes';
 import subscriptionsRoute from '@/routes/subscriptions';
+import { formatDate } from '@/lib/dates';
 
 defineOptions({
     layout: {
@@ -44,19 +45,11 @@ function formatDiscount(promo: { discount_type: string; discount_value: number }
     return `₹${Number(promo.discount_value).toFixed(2)}`;
 }
 
-function formatDate(value: string | null) {
-    if (!value) {
-        return null;
-    }
-
-    return new Date(value).toLocaleDateString();
-}
-
 function formatValidPeriod(promo: { start_date: string; end_date: string | null }) {
     const start = formatDate(promo.start_date);
-    const end = formatDate(promo.end_date);
+    const end = promo.end_date ? formatDate(promo.end_date) : null;
 
-    return end ? `${start} – ${end}` : `${start} – No end`;
+    return end && end !== '—' ? `${start} – ${end}` : `${start} – No end`;
 }
 </script>
 

@@ -47,6 +47,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('companies', [SubscriptionWebController::class, 'companies'])->name('companies');
         Route::get('companies/{product}/{id}', [SubscriptionWebController::class, 'companyShow'])->name('companies.show');
         Route::patch('companies/{product}/{id}', [SubscriptionWebController::class, 'companyUpdate'])->name('companies.update');
+        Route::post('companies/{product}/{id}/quote', [SubscriptionWebController::class, 'companyQuote'])->name('companies.quote');
+        Route::post('companies/{product}/{id}/offline-payment', [SubscriptionWebController::class, 'companyOfflinePayment'])->name('companies.offline-payment');
     });
 });
 
