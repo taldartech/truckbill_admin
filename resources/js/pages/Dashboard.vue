@@ -5,6 +5,7 @@ import CrmPageHeader from '@/components/crm/CrmPageHeader.vue';
 import CrmPanel from '@/components/crm/CrmPanel.vue';
 import CrmStatCard from '@/components/crm/CrmStatCard.vue';
 import { Button } from '@/components/ui/button';
+import { usePermissions } from '@/composables/usePermissions';
 import { dashboard } from '@/routes';
 import leads from '@/routes/leads';
 
@@ -31,6 +32,8 @@ defineProps<{
     };
 }>();
 
+const { can } = usePermissions();
+
 const cards = [
     { key: 'new', label: 'New Leads', icon: Inbox, tone: 'primary' as const },
     { key: 'qualified', label: 'Qualified', icon: Target, tone: 'blue' as const },
@@ -48,7 +51,7 @@ const cards = [
             description="Lead pipeline overview and conversion metrics"
         >
             <template #actions>
-                <Button as-child class="rounded-xl">
+                <Button v-if="can('leads.view')" as-child class="rounded-xl">
                     <Link :href="leads.index()">View Leads</Link>
                 </Button>
             </template>

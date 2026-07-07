@@ -23,8 +23,11 @@ const permissions = computed(() => (page.props.auth as { permissions?: string[] 
 const mainNavItems = computed<NavItem[]>(() => {
     const items: NavItem[] = [
         { title: 'Dashboard', href: dashboard(), icon: LayoutGrid },
-        { title: 'Leads', href: leads.index(), icon: Users },
     ];
+
+    if (permissions.value.includes('leads.view')) {
+        items.push({ title: 'Leads', href: leads.index(), icon: Users });
+    }
 
     if (permissions.value.includes('users.manage')) {
         items.push({ title: 'Users', href: usersRoute.index(), icon: UserCircle });

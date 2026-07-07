@@ -4,6 +4,7 @@ import { ref } from 'vue';
 import CrmPageHeader from '@/components/crm/CrmPageHeader.vue';
 import CrmPanel from '@/components/crm/CrmPanel.vue';
 import { Button } from '@/components/ui/button';
+import { usePermissions } from '@/composables/usePermissions';
 import { dashboard } from '@/routes';
 import usersRoute from '@/routes/users';
 
@@ -31,6 +32,8 @@ const props = defineProps<{
     roles: string[];
 }>();
 
+const { can } = usePermissions();
+
 const search = ref(props.filters.search ?? '');
 const role = ref(props.filters.role ?? '');
 
@@ -54,7 +57,7 @@ function applyFilters() {
     <div class="crm-page">
         <CrmPageHeader title="Users" description="Manage CRM team members and assignments">
             <template #actions>
-                <Button as-child variant="secondary" class="rounded-xl">
+                <Button v-if="can('users.manage')" as-child variant="secondary" class="rounded-xl">
                     <Link :href="usersRoute.create()">+ New User</Link>
                 </Button>
             </template>

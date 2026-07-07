@@ -17,6 +17,7 @@ defineProps<{
     statuses: Array<{ value: string; label: string }>;
     products: Array<{ value: string; label: string }>;
     users: Array<{ id: number; name: string }>;
+    canAssign: boolean;
 }>();
 
 const form = useForm({
@@ -77,7 +78,7 @@ function submit() {
                         <option v-for="s in statuses" :key="s.value" :value="s.value">{{ s.label }}</option>
                     </select>
                 </div>
-                <div>
+                <div v-if="canAssign">
                     <label class="mb-1 block text-sm font-medium">Assign To</label>
                     <select v-model="form.assigned_to" class="w-full rounded-md border px-3 py-2 text-sm">
                         <option :value="null">Unassigned</option>

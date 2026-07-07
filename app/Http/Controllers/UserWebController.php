@@ -96,6 +96,7 @@ class UserWebController extends Controller
             ],
             'roles' => Role::query()->orderBy('name')->get(['id', 'name']),
             'managers' => $this->managerOptions($user->id),
+            'canDelete' => request()->user()?->can('delete', $user) ?? false,
         ]);
     }
 

@@ -110,8 +110,13 @@ class LeadController extends Controller
         }
 
         if (array_key_exists('assigned_to', $data)) {
-            $this->leadService->assign($lead, $data['assigned_to'], $request->user());
+            $newAssignee = $data['assigned_to'];
             unset($data['assigned_to']);
+
+            if ((int) $newAssignee !== (int) $lead->assigned_to) {
+                Gate::authorize('assign', $lead);
+                $this->leadService->assign($lead, $newAssignee, $request->user());
+            }
         }
 
         if ($data !== []) {

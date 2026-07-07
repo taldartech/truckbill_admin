@@ -89,6 +89,7 @@ class LeadWebController extends Controller
             'statuses' => collect(LeadStatus::cases())->map(fn ($s) => ['value' => $s->value, 'label' => $s->label()]),
             'products' => collect(Product::cases())->map(fn ($p) => ['value' => $p->value, 'label' => $p->label()]),
             'users' => User::query()->orderBy('name')->get(['id', 'name']),
+            'canAssign' => $request->user()?->can('leads.assign') ?? false,
         ]);
     }
 
@@ -106,6 +107,12 @@ class LeadWebController extends Controller
             'assigned_to' => ['nullable', 'exists:users,id'],
             'remarks' => ['nullable', 'string', 'max:5000'],
         ]);
+
+        if (! empty($data['assigned_to'])) {
+            abort_unless($request->user()?->can('leads.assign'), 403);
+        } elseif (array_key_exists('assigned_to', $data)) {
+            unset($data['assigned_to']);
+        }
 
         $lead = $this->leadService->create([
             ...$data,
@@ -130,6 +137,8 @@ class LeadWebController extends Controller
             'users' => User::query()->orderBy('name')->get(['id', 'name']),
             'statuses' => collect(LeadStatus::cases())->map(fn ($s) => ['value' => $s->value, 'label' => $s->label()]),
             'products' => collect(Product::cases())->map(fn ($p) => ['value' => $p->value, 'label' => $p->label()]),
+            'canUpdate' => $request->user()?->can('update', $lead) ?? false,
+            'canAssign' => $request->user()?->can('assign', $lead) ?? false,
             'canDelete' => $request->user()?->can('delete', $lead) ?? false,
             'canInvite' => $request->user()?->can('invite', $lead) ?? false,
         ]);
@@ -150,10 +159,9 @@ class LeadWebController extends Controller
             $this->leadService->updateStatus($lead, LeadStatus::from($data['status']), $request->user());
             unset($data['status']);
         }
-        if (array_key_exists('assigned_to', $data)) {
-            $this->leadService->assign($lead, $data['assigned_to'], $request->user());
-            unset($data['assigned_to']);
-        }
+
+        $this->applyAssignment($request, $lead, $data);
+
         if ($data !== []) {
             $this->leadService->updateDetails($lead, $data, $request->user());
         }
@@ -218,5 +226,22 @@ class LeadWebController extends Controller
         $lead->delete();
 
         return redirect()->route('leads.index')->with('success', 'Lead deleted.');
+    }
+
+    private function applyAssignment(Request $request, Lead $lead, array &$data): void
+    {
+        if (! array_key_exists('assigned_to', $data)) {
+            return;
+        }
+
+        $newAssignee = $data['assigned_to'];
+        unset($data['assigned_to']);
+
+        if ((int) $newAssignee === (int) $lead->assigned_to) {
+            return;
+        }
+
+        Gate::authorize('assign', $lead);
+        $this->leadService->assign($lead, $newAssignee, $request->user());
     }
 }

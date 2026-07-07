@@ -16,6 +16,7 @@ const props = defineProps<{
     user: { id: number; name: string; email: string; manager_id: number | null; role: string | null };
     roles: Array<{ id: number; name: string }>;
     managers: Array<{ id: number; name: string }>;
+    canDelete: boolean;
 }>();
 
 const form = useForm({
@@ -80,7 +81,12 @@ function destroy() {
             </div>
         </form>
 
-        <button type="button" class="mt-4 w-full rounded-md border border-destructive py-2 text-sm text-destructive" @click="destroy">
+        <button
+            v-if="canDelete"
+            type="button"
+            class="mt-4 w-full rounded-md border border-destructive py-2 text-sm text-destructive"
+            @click="destroy"
+        >
             Delete User
         </button>
     </div>

@@ -24,6 +24,7 @@ const props = defineProps<{
         source: string;
         remarks: string | null;
         assigned_to: number | null;
+        assignee?: { name: string } | null;
         notes: Array<{ id: number; body: string; author?: { name: string } }>;
     };
     activities: Array<{
@@ -39,6 +40,8 @@ const props = defineProps<{
     products: Array<{ value: string; label: string }>;
     canDelete: boolean;
     canInvite: boolean;
+    canUpdate: boolean;
+    canAssign: boolean;
 }>();
 
 const updateForm = useForm({
@@ -52,7 +55,9 @@ const noteForm = useForm({ body: '' });
 const inviteForm = useForm({ product: props.lead.product || 'broker' });
 
 function saveLead() {
-    updateForm.patch(leadsRoute.update({ lead: props.lead.id }).url);
+    updateForm
+        .transform((data) => (props.canAssign ? data : (({ assigned_to: _assignedTo, ...rest }) => rest)(data)))
+        .patch(leadsRoute.update({ lead: props.lead.id }).url);
 }
 
 function addNote() {
@@ -87,10 +92,13 @@ function formatActivityTime(value: string) {
                 <p class="text-muted-foreground">{{ lead.email }} · {{ lead.mobile || 'No mobile' }}</p>
                 <p class="mt-2">{{ lead.company_name || 'No company' }}</p>
                 <p class="mt-2 text-sm">Source: {{ lead.source }}</p>
+                <p v-if="lead.assignee || !canAssign" class="mt-2 text-sm text-muted-foreground">
+                    Assigned to: {{ lead.assignee?.name || 'Unassigned' }}
+                </p>
                 </div>
             </section>
 
-            <section class="crm-panel">
+            <section v-if="canUpdate" class="crm-panel">
                 <div class="crm-panel-body">
                 <h2 class="mb-3 font-semibold">Notes</h2>
                 <form class="mb-4 flex gap-2" @submit.prevent="addNote">
@@ -116,6 +124,18 @@ function formatActivityTime(value: string) {
                 </div>
             </section>
 
+            <section v-else-if="lead.notes.length > 0" class="crm-panel">
+                <div class="crm-panel-body">
+                <h2 class="mb-3 font-semibold">Notes</h2>
+                <ul class="space-y-3">
+                    <li v-for="note in lead.notes" :key="note.id" class="rounded-lg bg-muted/30 p-3 text-sm">
+                        <p>{{ note.body }}</p>
+                        <p class="text-muted-foreground mt-1 text-xs">{{ note.author?.name }}</p>
+                    </li>
+                </ul>
+                </div>
+            </section>
+
             <section class="crm-panel">
                 <div class="crm-panel-body">
                 <h2 class="mb-3 font-semibold">Activity Timeline</h2>
@@ -132,7 +152,7 @@ function formatActivityTime(value: string) {
         </div>
 
         <div class="space-y-4">
-            <form class="crm-panel space-y-3" @submit.prevent="saveLead">
+            <form v-if="canUpdate" class="crm-panel space-y-3" @submit.prevent="saveLead">
                 <div class="crm-panel-body space-y-3">
                 <h2 class="font-semibold">Manage Lead</h2>
                 <div>
@@ -141,7 +161,7 @@ function formatActivityTime(value: string) {
                         <option v-for="s in statuses" :key="s.value" :value="s.value">{{ s.label }}</option>
                     </select>
                 </div>
-                <div>
+                <div v-if="canAssign">
                     <label class="text-sm">Assigned To</label>
                     <select v-model="updateForm.assigned_to" class="crm-input mt-1 w-full">
                         <option :value="null">Unassigned</option>
