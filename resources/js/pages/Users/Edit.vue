@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import CrmPageHeader from '@/components/crm/CrmPageHeader.vue';
+import CrmPanel from '@/components/crm/CrmPanel.vue';
+import { Button } from '@/components/ui/button';
 import { dashboard } from '@/routes';
 import usersRoute from '@/routes/users';
 
@@ -8,6 +11,7 @@ defineOptions({
         breadcrumbs: [
             { title: 'Dashboard', href: dashboard() },
             { title: 'Users', href: usersRoute.index() },
+            { title: 'Edit', href: '#' },
         ],
     },
 });
@@ -40,54 +44,79 @@ function destroy() {
 </script>
 
 <template>
-    <Head title="Edit User" />
+    <Head :title="`Edit ${user.name}`" />
 
-    <div class="mx-auto max-w-lg p-4">
-        <h1 class="mb-6 text-2xl font-semibold">Edit User</h1>
+    <div class="crm-page space-y-4">
+        <CrmPageHeader :title="`Edit ${user.name}`" description="Update account details and role assignment">
+            <template #actions>
+                <Button as-child variant="secondary" class="rounded-xl">
+                    <Link :href="usersRoute.index()">Back to users</Link>
+                </Button>
+            </template>
+        </CrmPageHeader>
 
-        <form class="space-y-4 rounded-xl border bg-card p-6" @submit.prevent="submit">
-            <div>
-                <label class="mb-1 block text-sm">Name *</label>
-                <input v-model="form.name" required class="w-full rounded-md border px-3 py-2 text-sm" />
-            </div>
-            <div>
-                <label class="mb-1 block text-sm">Email *</label>
-                <input v-model="form.email" type="email" required class="w-full rounded-md border px-3 py-2 text-sm" />
-            </div>
-            <div>
-                <label class="mb-1 block text-sm">New Password (leave blank to keep)</label>
-                <input v-model="form.password" type="password" class="w-full rounded-md border px-3 py-2 text-sm" />
-            </div>
-            <div>
-                <label class="mb-1 block text-sm">Confirm Password</label>
-                <input v-model="form.password_confirmation" type="password" class="w-full rounded-md border px-3 py-2 text-sm" />
-            </div>
-            <div>
-                <label class="mb-1 block text-sm">Role *</label>
-                <select v-model="form.role" class="w-full rounded-md border px-3 py-2 text-sm">
-                    <option v-for="r in roles" :key="r.id" :value="r.name">{{ r.name }}</option>
-                </select>
-            </div>
-            <div>
-                <label class="mb-1 block text-sm">Manager</label>
-                <select v-model="form.manager_id" class="w-full rounded-md border px-3 py-2 text-sm">
-                    <option :value="null">None</option>
-                    <option v-for="m in managers" :key="m.id" :value="m.id">{{ m.name }}</option>
-                </select>
-            </div>
-            <div class="flex gap-3">
-                <button type="submit" class="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground" :disabled="form.processing">Save</button>
-                <Link :href="usersRoute.index()" class="rounded-md border px-4 py-2 text-sm">Cancel</Link>
-            </div>
-        </form>
+        <CrmPanel>
+            <form class="space-y-6" @submit.prevent="submit">
+                <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    <label class="text-sm">
+                        Name *
+                        <input v-model="form.name" required class="crm-input mt-1 w-full" />
+                        <p v-if="form.errors.name" class="mt-1 text-sm text-destructive">{{ form.errors.name }}</p>
+                    </label>
 
-        <button
-            v-if="canDelete"
-            type="button"
-            class="mt-4 w-full rounded-md border border-destructive py-2 text-sm text-destructive"
-            @click="destroy"
-        >
-            Delete User
-        </button>
+                    <label class="text-sm md:col-span-2">
+                        Email *
+                        <input v-model="form.email" type="email" required class="crm-input mt-1 w-full" />
+                        <p v-if="form.errors.email" class="mt-1 text-sm text-destructive">{{ form.errors.email }}</p>
+                    </label>
+
+                    <label class="text-sm">
+                        New password
+                        <input v-model="form.password" type="password" class="crm-input mt-1 w-full" />
+                        <p class="mt-1 text-xs text-muted-foreground">Leave blank to keep the current password.</p>
+                    </label>
+
+                    <label class="text-sm">
+                        Confirm password
+                        <input v-model="form.password_confirmation" type="password" class="crm-input mt-1 w-full" />
+                        <p v-if="form.errors.password" class="mt-1 text-sm text-destructive">{{ form.errors.password }}</p>
+                    </label>
+
+                    <label class="text-sm">
+                        Role *
+                        <select v-model="form.role" class="crm-input mt-1 w-full">
+                            <option v-for="r in roles" :key="r.id" :value="r.name">{{ r.name }}</option>
+                        </select>
+                        <p v-if="form.errors.role" class="mt-1 text-sm text-destructive">{{ form.errors.role }}</p>
+                    </label>
+
+                    <label class="text-sm">
+                        Manager
+                        <select v-model="form.manager_id" class="crm-input mt-1 w-full">
+                            <option :value="null">None</option>
+                            <option v-for="m in managers" :key="m.id" :value="m.id">{{ m.name }}</option>
+                        </select>
+                        <p v-if="form.errors.manager_id" class="mt-1 text-sm text-destructive">{{ form.errors.manager_id }}</p>
+                    </label>
+                </div>
+
+                <div class="flex flex-wrap gap-3 border-t border-border pt-4">
+                    <Button type="submit" class="rounded-xl" :disabled="form.processing">Save changes</Button>
+                    <Button as-child variant="secondary" class="rounded-xl">
+                        <Link :href="usersRoute.index()">Cancel</Link>
+                    </Button>
+                </div>
+            </form>
+        </CrmPanel>
+
+        <CrmPanel v-if="canDelete">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                    <h2 class="font-semibold text-destructive">Delete user</h2>
+                    <p class="mt-1 text-sm text-muted-foreground">Permanently remove this account from the CRM.</p>
+                </div>
+                <Button type="button" variant="destructive" class="rounded-xl" @click="destroy">Delete user</Button>
+            </div>
+        </CrmPanel>
     </div>
 </template>

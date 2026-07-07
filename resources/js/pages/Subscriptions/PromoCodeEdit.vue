@@ -69,9 +69,9 @@ function submit() {
         </CrmPageHeader>
 
         <CrmPanel>
-            <form class="mx-auto max-w-2xl space-y-4" @submit.prevent="submit">
-                <div class="grid gap-4 md:grid-cols-2">
-                    <div class="md:col-span-2">
+            <form class="space-y-6" @submit.prevent="submit">
+                <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    <div>
                         <label class="mb-1 block text-sm font-medium">Code *</label>
                         <input v-model="form.code" class="crm-input w-full uppercase" placeholder="FQ9K2X" required />
                         <p v-if="form.errors.code" class="mt-1 text-sm text-destructive">{{ form.errors.code }}</p>
@@ -112,11 +112,11 @@ function submit() {
                         <p v-if="form.errors.end_date" class="mt-1 text-sm text-destructive">{{ form.errors.end_date }}</p>
                     </div>
 
-                    <div class="md:col-span-2">
+                    <div>
                         <label class="mb-1 block text-sm font-medium">Maximum usage</label>
                         <input
                             v-model.number="form.max_uses"
-                            class="crm-input w-full max-w-xs"
+                            class="crm-input w-full"
                             type="number"
                             min="1"
                             placeholder="Unlimited"
@@ -127,7 +127,7 @@ function submit() {
                         <p v-if="form.errors.max_uses" class="mt-1 text-sm text-destructive">{{ form.errors.max_uses }}</p>
                     </div>
 
-                    <div class="md:col-span-2">
+                    <div class="md:col-span-2 lg:col-span-3">
                         <label class="mb-2 block text-sm font-medium">Applicable products *</label>
                         <div class="flex flex-wrap gap-4">
                             <label v-for="p in products" :key="p.value" class="flex items-center gap-2 text-sm">
@@ -138,7 +138,7 @@ function submit() {
                         <p v-if="form.errors.applicable_products" class="mt-1 text-sm text-destructive">{{ form.errors.applicable_products }}</p>
                     </div>
 
-                    <div class="md:col-span-2">
+                    <div class="md:col-span-2 lg:col-span-3">
                         <label class="flex items-center gap-2 text-sm">
                             <input v-model="form.is_active" type="checkbox" />
                             Active
@@ -146,7 +146,7 @@ function submit() {
                     </div>
                 </div>
 
-                <div class="flex gap-3 pt-2">
+                <div class="flex flex-wrap gap-3 border-t border-border pt-4">
                     <Button type="submit" class="rounded-xl" :disabled="form.processing">Save changes</Button>
                     <Button as-child variant="secondary" class="rounded-xl">
                         <Link :href="subscriptionsRoute.promoCodes()">Cancel</Link>
