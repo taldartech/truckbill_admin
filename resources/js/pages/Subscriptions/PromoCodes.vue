@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
+import { computed } from 'vue';
 import CrmPageHeader from '@/components/crm/CrmPageHeader.vue';
 import CrmPanel from '@/components/crm/CrmPanel.vue';
 import { Button } from '@/components/ui/button';
+import { usePermissions } from '@/composables/usePermissions';
 import { dashboard } from '@/routes';
 import subscriptionsRoute from '@/routes/subscriptions';
 import { formatDate } from '@/lib/dates';
@@ -33,6 +35,9 @@ const props = defineProps<{
     products: Array<{ value: string; label: string }>;
 }>();
 
+const { can } = usePermissions();
+const canManagePromoCodes = computed(() => can('subscriptions.promo_codes'));
+
 function productLabel(value: string) {
     return props.products.find((p) => p.value === value)?.label ?? value;
 }
@@ -59,7 +64,7 @@ function formatValidPeriod(promo: { start_date: string; end_date: string | null 
     <div class="crm-page">
         <CrmPageHeader title="Promo codes" description="Global codes with per-product applicability">
             <template #actions>
-                <Button as-child variant="secondary" class="rounded-xl">
+                <Button v-if="canManagePromoCodes" as-child variant="secondary" class="rounded-xl">
                     <Link :href="subscriptionsRoute.promoCodes.create()">+ New promo code</Link>
                 </Button>
             </template>
@@ -103,6 +108,7 @@ function formatValidPeriod(promo: { start_date: string; end_date: string | null 
                             </td>
                             <td>
                                 <Link
+                                    v-if="canManagePromoCodes"
                                     :href="subscriptionsRoute.promoCodes.edit({ promoCode: promo.id })"
                                     class="font-medium text-secondary hover:underline"
                                 >

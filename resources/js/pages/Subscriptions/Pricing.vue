@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { Head, useForm } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import CrmPageHeader from '@/components/crm/CrmPageHeader.vue';
 import CrmPanel from '@/components/crm/CrmPanel.vue';
 import { Button } from '@/components/ui/button';
+import { usePermissions } from '@/composables/usePermissions';
 import { dashboard } from '@/routes';
 import subscriptionsRoute from '@/routes/subscriptions';
 
@@ -35,6 +36,9 @@ const props = defineProps<{
     catalog: CatalogRow[];
     products: Array<{ value: string; label: string }>;
 }>();
+
+const { can } = usePermissions();
+const canManagePricing = computed(() => can('subscriptions.pricing'));
 
 const editingByProduct = ref<Record<string, boolean>>({});
 const snapshots = ref<Record<string, string>>({});
@@ -108,7 +112,7 @@ function updateRow(product: string) {
                 <div class="flex w-full items-center justify-between gap-3">
                     <h2 class="text-base font-semibold">{{ productLabel(row.product) }}</h2>
                     <Button
-                        v-if="!isEditing(row.product)"
+                        v-if="canManagePricing && !isEditing(row.product)"
                         type="button"
                         variant="secondary"
                         size="sm"
@@ -118,7 +122,7 @@ function updateRow(product: string) {
                         Edit
                     </Button>
                     <Button
-                        v-else
+                        v-else-if="canManagePricing"
                         type="button"
                         variant="secondary"
                         size="sm"
@@ -208,7 +212,13 @@ function updateRow(product: string) {
                 </label>
             </div>
             <p class="mt-2 text-xs text-muted-foreground">Base: ₹{{ formatAmount(row.base_price) }} / year</p>
-            <Button class="mt-3" type="button" :disabled="!isEditing(row.product)" @click="updateRow(row.product)">
+            <Button
+                v-if="canManagePricing"
+                class="mt-3"
+                type="button"
+                :disabled="!isEditing(row.product)"
+                @click="updateRow(row.product)"
+            >
                 Save
             </Button>
         </CrmPanel>

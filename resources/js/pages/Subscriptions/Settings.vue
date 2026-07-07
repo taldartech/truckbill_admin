@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { Head, useForm } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import CrmPageHeader from '@/components/crm/CrmPageHeader.vue';
 import CrmPanel from '@/components/crm/CrmPanel.vue';
 import { Button } from '@/components/ui/button';
+import { usePermissions } from '@/composables/usePermissions';
 import { dashboard } from '@/routes';
 import subscriptionsRoute from '@/routes/subscriptions';
 
@@ -22,6 +23,9 @@ const props = defineProps<{
     gst_rate_percent: number;
     effective_from: string | null;
 }>();
+
+const { can } = usePermissions();
+const canManageSettings = computed(() => can('subscriptions.settings'));
 
 const editing = ref(false);
 
@@ -58,10 +62,10 @@ function submit() {
     <div class="crm-page">
         <CrmPageHeader title="Subscription settings" description="Global policy applied to all products">
             <template #actions>
-                <Button v-if="!editing" type="button" variant="secondary" class="rounded-xl" @click="startEdit">
+                <Button v-if="canManageSettings && !editing" type="button" variant="secondary" class="rounded-xl" @click="startEdit">
                     Edit
                 </Button>
-                <Button v-else type="button" variant="secondary" class="rounded-xl" @click="cancelEdit">
+                <Button v-else-if="canManageSettings" type="button" variant="secondary" class="rounded-xl" @click="cancelEdit">
                     Cancel
                 </Button>
             </template>
@@ -103,7 +107,7 @@ function submit() {
                     Current effective from {{ effective_from }}
                 </p>
 
-                <Button type="submit" :disabled="!editing || form.processing">Save settings</Button>
+                <Button v-if="canManageSettings" type="submit" :disabled="!editing || form.processing">Save settings</Button>
             </form>
         </CrmPanel>
     </div>

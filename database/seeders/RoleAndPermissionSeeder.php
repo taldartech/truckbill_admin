@@ -19,6 +19,11 @@ class RoleAndPermissionSeeder extends Seeder
             'leads.invite',
             'users.manage',
             'roles.manage',
+            'subscriptions.view',
+            'subscriptions.pricing',
+            'subscriptions.settings',
+            'subscriptions.promo_codes',
+            'subscriptions.companies',
         ];
 
         foreach ($permissions as $permission) {

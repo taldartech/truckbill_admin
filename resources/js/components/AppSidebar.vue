@@ -37,12 +37,18 @@ const mainNavItems = computed<NavItem[]>(() => {
     return items;
 });
 
-const subscriptionNavItems = computed<NavItem[]>(() => [
-    { title: 'Pricing', href: subscriptionsRoute.pricing(), icon: IndianRupee, matchPrefix: true },
-    { title: 'Settings', href: '/subscriptions/settings', icon: Settings, matchPrefix: true },
-    { title: 'Promo Codes', href: subscriptionsRoute.promoCodes(), icon: Ticket, matchPrefix: true },
-    { title: 'Companies', href: subscriptionsRoute.companies(), icon: Building2, matchPrefix: true },
-]);
+const subscriptionNavItems = computed<NavItem[]>(() => {
+    if (!permissions.value.includes('subscriptions.view')) {
+        return [];
+    }
+
+    return [
+        { title: 'Pricing', href: subscriptionsRoute.pricing(), icon: IndianRupee, matchPrefix: true },
+        { title: 'Settings', href: '/subscriptions/settings', icon: Settings, matchPrefix: true },
+        { title: 'Promo Codes', href: subscriptionsRoute.promoCodes(), icon: Ticket, matchPrefix: true },
+        { title: 'Companies', href: subscriptionsRoute.companies(), icon: Building2, matchPrefix: true },
+    ];
+});
 </script>
 
 <template>
@@ -53,7 +59,7 @@ const subscriptionNavItems = computed<NavItem[]>(() => [
 
         <SidebarContent>
             <NavMain :items="mainNavItems" />
-            <NavMain label="Subscriptions" :items="subscriptionNavItems" />
+            <NavMain v-if="subscriptionNavItems.length > 0" label="Subscriptions" :items="subscriptionNavItems" />
         </SidebarContent>
 
         <SidebarFooter class="border-t border-sidebar-border p-3">

@@ -4,6 +4,7 @@ import { computed, ref } from 'vue';
 import CrmPageHeader from '@/components/crm/CrmPageHeader.vue';
 import CrmPanel from '@/components/crm/CrmPanel.vue';
 import { Button } from '@/components/ui/button';
+import { usePermissions } from '@/composables/usePermissions';
 import { dashboard } from '@/routes';
 import subscriptionsRoute from '@/routes/subscriptions';
 import { formatDate } from '@/lib/dates';
@@ -66,6 +67,8 @@ const props = defineProps<{
 }>();
 
 const page = usePage();
+const { can } = usePermissions();
+const canManageCompanies = computed(() => can('subscriptions.companies'));
 const editing = ref(false);
 const quoteLoading = ref(false);
 const quoteError = ref('');
@@ -313,7 +316,7 @@ const usageEntries = computed(() => Object.entries(props.subscription.usage ?? {
             </CrmPanel>
         </div>
 
-        <CrmPanel>
+        <CrmPanel v-if="canManageCompanies">
             <template #header>
                 <div class="flex w-full items-center justify-between gap-3">
                     <h2 class="text-base font-semibold">Manual plan override</h2>
@@ -398,7 +401,7 @@ const usageEntries = computed(() => Object.entries(props.subscription.usage ?? {
             </form>
         </CrmPanel>
 
-        <CrmPanel title="Record offline payment">
+        <CrmPanel v-if="canManageCompanies" title="Record offline payment">
             <p class="mb-4 text-sm text-muted-foreground">
                 For customers who paid outside Razorpay. This records the payment and applies renewal or add-on rules using current catalog pricing.
             </p>

@@ -24,6 +24,8 @@ class SubscriptionWebController extends Controller
 
     public function pricing(): Response
     {
+        $this->authorizeView();
+
         return Inertia::render('Subscriptions/Pricing', [
             'catalog' => $this->catalogService->latestCatalogRows(),
             'products' => collect(Product::cases())->map(fn (Product $p) => [
@@ -35,6 +37,8 @@ class SubscriptionWebController extends Controller
 
     public function updatePricing(Request $request, string $product): RedirectResponse
     {
+        $this->authorizePricing();
+
         $validated = $request->validate([
             'base_price' => ['required', 'numeric', 'min:0'],
             'included_branches' => ['required', 'integer', 'min:1'],
@@ -57,6 +61,8 @@ class SubscriptionWebController extends Controller
 
     public function settings(): Response
     {
+        $this->authorizeView();
+
         $current = $this->settingsService->currentSettings();
         $meta = $this->settingsService->currentMeta();
 
@@ -69,6 +75,8 @@ class SubscriptionWebController extends Controller
 
     public function updateSettings(Request $request): RedirectResponse
     {
+        $this->authorizeSettings();
+
         $validated = $request->validate([
             'grace_period_days' => ['required', 'integer', 'min:0', 'max:365'],
             'gst_rate_percent' => ['required', 'numeric', 'min:0', 'max:100'],
@@ -84,6 +92,8 @@ class SubscriptionWebController extends Controller
 
     public function promoCodes(): Response
     {
+        $this->authorizeView();
+
         return Inertia::render('Subscriptions/PromoCodes', [
             'promo_codes' => PromoCode::query()->orderByDesc('created_at')->get(),
             'products' => $this->productOptions(),
@@ -92,6 +102,8 @@ class SubscriptionWebController extends Controller
 
     public function createPromoCode(): Response
     {
+        $this->authorizePromoCodes();
+
         return Inertia::render('Subscriptions/PromoCodeCreate', [
             'products' => $this->productOptions(),
             'discount_types' => [
@@ -103,6 +115,8 @@ class SubscriptionWebController extends Controller
 
     public function storePromoCode(Request $request): RedirectResponse
     {
+        $this->authorizePromoCodes();
+
         $validated = $request->validate([
             'code' => ['required', 'string', 'max:50', Rule::unique('promo_codes', 'code')],
             'discount_type' => ['required', Rule::in(['percentage', 'absolute'])],
@@ -125,6 +139,8 @@ class SubscriptionWebController extends Controller
 
     public function editPromoCode(PromoCode $promoCode): Response
     {
+        $this->authorizePromoCodes();
+
         return Inertia::render('Subscriptions/PromoCodeEdit', [
             'promo_code' => [
                 'id' => $promoCode->id,
@@ -148,6 +164,8 @@ class SubscriptionWebController extends Controller
 
     public function updatePromoCode(Request $request, PromoCode $promoCode): RedirectResponse
     {
+        $this->authorizePromoCodes();
+
         $validated = $request->validate([
             'code' => ['required', 'string', 'max:50', Rule::unique('promo_codes', 'code')->ignore($promoCode->id)],
             'discount_type' => ['required', Rule::in(['percentage', 'absolute'])],
@@ -169,6 +187,8 @@ class SubscriptionWebController extends Controller
 
     public function companies(): Response
     {
+        $this->authorizeView();
+
         $items = [];
 
         foreach (Product::cases() as $product) {
@@ -193,6 +213,8 @@ class SubscriptionWebController extends Controller
 
     public function companyShow(string $product, string $id): Response
     {
+        $this->authorizeView();
+
         $productEnum = Product::from($product);
         $detail = $this->productApi->get("/api/admin/subscriptions/{$id}", $productEnum);
         $catalog = $this->catalogService->catalogForProduct($product);
@@ -208,6 +230,8 @@ class SubscriptionWebController extends Controller
 
     public function companyUpdate(Request $request, string $product, string $id): RedirectResponse
     {
+        $this->authorizeCompanies();
+
         $productEnum = Product::from($product);
 
         $validated = $request->validate([
@@ -242,6 +266,8 @@ class SubscriptionWebController extends Controller
 
     public function companyQuote(Request $request, string $product, string $id): JsonResponse
     {
+        $this->authorizeCompanies();
+
         $productEnum = Product::from($product);
 
         $validated = $request->validate([
@@ -259,6 +285,8 @@ class SubscriptionWebController extends Controller
 
     public function companyOfflinePayment(Request $request, string $product, string $id): RedirectResponse
     {
+        $this->authorizeCompanies();
+
         $productEnum = Product::from($product);
 
         $validated = $request->validate([
@@ -291,6 +319,31 @@ class SubscriptionWebController extends Controller
         }
 
         return back()->with('success', 'Offline payment recorded and plan updated.');
+    }
+
+    private function authorizeView(): void
+    {
+        abort_unless(auth()->user()?->can('subscriptions.view'), 403);
+    }
+
+    private function authorizePricing(): void
+    {
+        abort_unless(auth()->user()?->can('subscriptions.pricing'), 403);
+    }
+
+    private function authorizeSettings(): void
+    {
+        abort_unless(auth()->user()?->can('subscriptions.settings'), 403);
+    }
+
+    private function authorizePromoCodes(): void
+    {
+        abort_unless(auth()->user()?->can('subscriptions.promo_codes'), 403);
+    }
+
+    private function authorizeCompanies(): void
+    {
+        abort_unless(auth()->user()?->can('subscriptions.companies'), 403);
     }
 
     /** @return array{lr_credits: bool, trucks: bool} */
