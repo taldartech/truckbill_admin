@@ -32,6 +32,7 @@ class Lead extends Model
         'ip_address',
         'rejection_reason',
         'converted_at',
+        'next_follow_up_at',
     ];
 
     protected function casts(): array
@@ -40,6 +41,7 @@ class Lead extends Model
             'status' => LeadStatus::class,
             'product' => Product::class,
             'converted_at' => 'datetime',
+            'next_follow_up_at' => 'date',
         ];
     }
 
@@ -79,5 +81,55 @@ class Lead extends Model
     public function lastActionAgo(): string
     {
         return $this->lastActionAt()->diffForHumans();
+    }
+
+    public function toArray(): array
+    {
+        $array = parent::toArray();
+
+        if (array_key_exists('next_follow_up_at', $array)) {
+            $array['next_follow_up_at'] = $this->next_follow_up_at?->toDateString();
+        }
+
+        return $array;
+    }
+
+    public function followUpStatus(): ?string
+    {
+        if ($this->next_follow_up_at === null) {
+            return null;
+        }
+
+        $today = now()->startOfDay();
+        $followUp = $this->next_follow_up_at->startOfDay();
+
+        if ($followUp->lt($today)) {
+            return 'overdue';
+        }
+
+        if ($followUp->equalTo($today)) {
+            return 'due_today';
+        }
+
+        return 'upcoming';
+    }
+
+    /** @param Builder<Lead> $query */
+    public function scopeFollowUpFilter(Builder $query, string $filter): Builder
+    {
+        $today = now()->toDateString();
+
+        return match ($filter) {
+            'overdue' => $query
+                ->whereNotNull('next_follow_up_at')
+                ->whereDate('next_follow_up_at', '<', $today),
+            'due_today' => $query
+                ->whereNotNull('next_follow_up_at')
+                ->whereDate('next_follow_up_at', $today),
+            'upcoming' => $query
+                ->whereNotNull('next_follow_up_at')
+                ->whereDate('next_follow_up_at', '>', $today),
+            default => $query,
+        };
     }
 }

@@ -4,7 +4,7 @@ import { ref } from 'vue';
 import CrmPageHeader from '@/components/crm/CrmPageHeader.vue';
 import CrmPanel from '@/components/crm/CrmPanel.vue';
 import { Button } from '@/components/ui/button';
-import { formatDateTime } from '@/lib/dates';
+import { followUpLabel, formatDate, formatDateTime } from '@/lib/dates';
 import { dashboard } from '@/routes';
 import leadsRoute from '@/routes/leads';
 
@@ -30,11 +30,21 @@ const props = defineProps<{
             created_at: string;
             last_action_ago: string;
             last_action_at: string;
+            next_follow_up_at: string | null;
+            follow_up_status: string | null;
             assignee?: { name: string } | null;
         }>;
         links: Array<{ url: string | null; label: string; active: boolean }>;
     };
-    filters: { status?: string; search?: string; product?: string; assigned_to?: string; sort?: string; direction?: string };
+    filters: {
+        status?: string;
+        search?: string;
+        product?: string;
+        assigned_to?: string;
+        follow_up?: string;
+        sort?: string;
+        direction?: string;
+    };
     statuses: Array<{ value: string; label: string }>;
     products: Array<{ value: string; label: string }>;
     assignees: Array<{ id: number; name: string }>;
@@ -46,6 +56,7 @@ const search = ref(props.filters.search ?? '');
 const status = ref(props.filters.status ?? '');
 const product = ref(props.filters.product ?? '');
 const assignedTo = ref(props.filters.assigned_to ?? '');
+const followUp = ref(props.filters.follow_up ?? '');
 const sort = ref(props.filters.sort ?? 'created_at');
 const direction = ref(props.filters.direction ?? 'desc');
 
@@ -57,6 +68,7 @@ function applyFilters() {
                 status: status.value || undefined,
                 product: product.value || undefined,
                 assigned_to: assignedTo.value || undefined,
+                follow_up: followUp.value || undefined,
                 sort: sort.value,
                 direction: direction.value,
             },
@@ -74,6 +86,17 @@ function toggleSort(column: string) {
         direction.value = 'asc';
     }
     applyFilters();
+}
+
+function followUpClass(status: string | null): string {
+    switch (status) {
+        case 'overdue':
+            return 'text-destructive font-medium';
+        case 'due_today':
+            return 'text-amber-600 font-medium';
+        default:
+            return 'text-muted-foreground';
+    }
 }
 </script>
 
@@ -115,6 +138,15 @@ function toggleSort(column: string) {
                         <option v-for="p in products" :key="p.value" :value="p.value">{{ p.label }}</option>
                     </select>
                 </div>
+                <div>
+                    <label class="mb-1 block text-sm">Follow-up</label>
+                    <select v-model="followUp" class="crm-input min-w-[160px]" @change="applyFilters">
+                        <option value="">All</option>
+                        <option value="overdue">Overdue</option>
+                        <option value="due_today">Due today</option>
+                        <option value="upcoming">Upcoming</option>
+                    </select>
+                </div>
                 <div v-if="canFilterByAssignee">
                     <label class="mb-1 block text-sm">Assign to</label>
                     <select v-model="assignedTo" class="crm-input min-w-[180px]" @change="applyFilters">
@@ -140,13 +172,14 @@ function toggleSort(column: string) {
                             <th>Product</th>
                             <th>Source</th>
                             <th>Assigned</th>
+                            <th class="cursor-pointer" @click="toggleSort('next_follow_up_at')">Next follow-up</th>
                             <th class="cursor-pointer" @click="toggleSort('last_action_at')">Last action</th>
                             <th class="cursor-pointer" @click="toggleSort('created_at')">Created</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr v-if="props.leads.data.length === 0">
-                            <td colspan="8" class="px-4 py-10 text-center text-muted-foreground">No leads found.</td>
+                            <td colspan="9" class="px-4 py-10 text-center text-muted-foreground">No leads found.</td>
                         </tr>
                         <tr v-for="lead in props.leads.data" :key="lead.id" class="crm-table-row">
                             <td>
@@ -160,6 +193,11 @@ function toggleSort(column: string) {
                             <td class="capitalize">{{ lead.product || '—' }}</td>
                             <td>{{ lead.source }}</td>
                             <td>{{ lead.assignee?.name || '—' }}</td>
+                            <td :class="followUpClass(lead.follow_up_status)">
+                                <span v-if="lead.next_follow_up_at">{{ formatDate(lead.next_follow_up_at) }}</span>
+                                <span v-else>—</span>
+                                <span v-if="lead.follow_up_status" class="block text-xs">{{ followUpLabel(lead.follow_up_status) }}</span>
+                            </td>
                             <td
                                 class="text-muted-foreground"
                                 :title="formatDateTime(lead.last_action_at)"

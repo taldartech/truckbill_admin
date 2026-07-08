@@ -9,8 +9,10 @@ export type BreadcrumbItem = {
 export type NavSubItem = {
     title: string;
     href: NonNullable<InertiaLinkProps['href']>;
-    /** Match a specific status (or other) query value. Omit for the unfiltered list. */
+    /** Match a specific status query value. */
     status?: string;
+    /** Match a specific follow_up query value. */
+    follow_up?: string;
 };
 
 export type NavItem = {

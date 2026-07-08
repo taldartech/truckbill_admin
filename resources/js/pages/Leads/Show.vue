@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { Head, router, useForm } from '@inertiajs/vue3';
+import { computed } from 'vue';
+import { followUpLabel, followUpStatusFromDate, formatDate, toDateInputValue } from '@/lib/dates';
 import { dashboard } from '@/routes';
 import leadsRoute from '@/routes/leads';
 
@@ -24,6 +26,7 @@ const props = defineProps<{
         source: string;
         remarks: string | null;
         assigned_to: number | null;
+        next_follow_up_at: string | null;
         assignee?: { name: string } | null;
         notes: Array<{ id: number; body: string; author?: { name: string } }>;
     };
@@ -49,14 +52,24 @@ const updateForm = useForm({
     assigned_to: props.lead.assigned_to,
     product: props.lead.product,
     remarks: props.lead.remarks,
+    next_follow_up_at: toDateInputValue(props.lead.next_follow_up_at),
 });
+
+const followUpStatus = computed(() => followUpStatusFromDate(props.lead.next_follow_up_at));
 
 const noteForm = useForm({ body: '' });
 const inviteForm = useForm({ product: props.lead.product || 'broker' });
 
 function saveLead() {
     updateForm
-        .transform((data) => (props.canAssign ? data : (({ assigned_to: _assignedTo, ...rest }) => rest)(data)))
+        .transform((data) => {
+            const base = props.canAssign ? data : (({ assigned_to: _assignedTo, ...rest }) => rest)(data);
+
+            return {
+                ...base,
+                next_follow_up_at: data.next_follow_up_at || null,
+            };
+        })
         .patch(leadsRoute.update({ lead: props.lead.id }).url);
 }
 
@@ -92,6 +105,17 @@ function formatActivityTime(value: string) {
                 <p class="text-muted-foreground">{{ lead.email }} · {{ lead.mobile || 'No mobile' }}</p>
                 <p class="mt-2">{{ lead.company_name || 'No company' }}</p>
                 <p class="mt-2 text-sm">Source: {{ lead.source }}</p>
+                <p
+                    v-if="lead.next_follow_up_at"
+                    class="mt-2 text-sm"
+                    :class="{
+                        'font-medium text-destructive': followUpStatus === 'overdue',
+                        'font-medium text-amber-600': followUpStatus === 'due_today',
+                    }"
+                >
+                    Next follow-up: {{ formatDate(lead.next_follow_up_at) }}
+                    <span v-if="followUpStatus" class="text-muted-foreground">({{ followUpLabel(followUpStatus) }})</span>
+                </p>
                 <p v-if="lead.assignee || !canAssign" class="mt-2 text-sm text-muted-foreground">
                     Assigned to: {{ lead.assignee?.name || 'Unassigned' }}
                 </p>
@@ -178,6 +202,15 @@ function formatActivityTime(value: string) {
                 <div>
                     <label class="text-sm">Remarks</label>
                     <textarea v-model="updateForm.remarks" class="crm-input mt-1 min-h-24 w-full" />
+                </div>
+                <div>
+                    <label class="text-sm">Next follow-up</label>
+                    <input
+                        v-model="updateForm.next_follow_up_at"
+                        type="date"
+                        class="crm-input mt-1 w-full"
+                    />
+                    <p class="mt-1 text-xs text-muted-foreground">Leave empty to clear the scheduled follow-up.</p>
                 </div>
                 <button type="submit" class="crm-btn-primary w-full">Save Changes</button>
                 </div>

@@ -15,6 +15,7 @@ use App\Support\LeadActivityPresenter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\Rule;
@@ -67,10 +68,18 @@ class LeadWebController extends Controller
 
         $this->applyAssignedToFilter($request, $query);
 
+        $followUpFilter = (string) $request->input('follow_up', '');
+
+        if ($followUpFilter !== '' && in_array($followUpFilter, ['overdue', 'due_today', 'upcoming'], true)) {
+            $query->followUpFilter($followUpFilter);
+        }
+
         $sort = $request->input('sort', 'created_at');
         $direction = $request->input('direction', 'desc') === 'asc' ? 'asc' : 'desc';
         if ($sort === 'last_action_at') {
             $query->orderByRaw('COALESCE(last_action_at, leads.created_at) '.$direction);
+        } elseif ($sort === 'next_follow_up_at') {
+            $query->orderByRaw('next_follow_up_at IS NULL')->orderBy('next_follow_up_at', $direction);
         } elseif (in_array($sort, ['name', 'status', 'created_at', 'company_name'], true)) {
             $query->orderBy($sort, $direction);
         } else {
@@ -81,10 +90,11 @@ class LeadWebController extends Controller
             'leads' => $query->paginate(20)->withQueryString()->through(function (Lead $lead) {
                 $lead->setAttribute('last_action_ago', $lead->lastActionAgo());
                 $lead->setAttribute('last_action_at', $lead->lastActionAt()->toIso8601String());
+                $lead->setAttribute('follow_up_status', $lead->followUpStatus());
 
                 return $lead;
             }),
-            'filters' => $request->only(['status', 'search', 'product', 'assigned_to', 'sort', 'direction']),
+            'filters' => $request->only(['status', 'search', 'product', 'assigned_to', 'follow_up', 'sort', 'direction']),
             'canCreate' => $request->user()?->can('create', Lead::class) ?? false,
             'canFilterByAssignee' => ! $request->user()?->hasAssignedLeadScope(),
             'assignees' => $this->assigneeFilterOptions($request),
@@ -167,6 +177,7 @@ class LeadWebController extends Controller
             'assigned_to' => ['nullable', 'exists:users,id'],
             'product' => ['nullable', Rule::enum(Product::class)],
             'remarks' => ['nullable', 'string'],
+            'next_follow_up_at' => ['nullable', 'date'],
         ]);
 
         if (isset($data['status'])) {
@@ -175,6 +186,14 @@ class LeadWebController extends Controller
         }
 
         $this->applyAssignment($request, $lead, $data);
+
+        if (array_key_exists('next_follow_up_at', $data)) {
+            $followUpAt = filled($data['next_follow_up_at'])
+                ? Carbon::parse($data['next_follow_up_at'])->startOfDay()
+                : null;
+            $this->leadService->scheduleFollowUp($lead->fresh(), $followUpAt, $request->user());
+            unset($data['next_follow_up_at']);
+        }
 
         if ($data !== []) {
             $this->leadService->updateDetails($lead, $data, $request->user());

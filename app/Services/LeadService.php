@@ -6,6 +6,7 @@ use App\Enums\LeadStatus;
 use App\Enums\Product;
 use App\Models\Lead;
 use App\Models\User;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class LeadService
@@ -132,6 +133,28 @@ class LeadService
 
         $this->logActivity($lead, implode('; ', $changes), $actor, 'updated', [
             'fields' => $changes,
+        ]);
+
+        return $lead->fresh();
+    }
+
+    public function scheduleFollowUp(Lead $lead, ?Carbon $at, ?User $actor = null): Lead
+    {
+        $current = $lead->next_follow_up_at;
+
+        if (($current === null && $at === null)
+            || ($current !== null && $at !== null && $current->equalTo($at))) {
+            return $lead;
+        }
+
+        $lead->update(['next_follow_up_at' => $at]);
+
+        $description = $at === null
+            ? 'Next follow-up cleared'
+            : 'Next follow-up scheduled for '.$at->format('d M Y');
+
+        $this->logActivity($lead, $description, $actor, 'follow_up_scheduled', [
+            'next_follow_up_at' => $at?->toIso8601String(),
         ]);
 
         return $lead->fresh();

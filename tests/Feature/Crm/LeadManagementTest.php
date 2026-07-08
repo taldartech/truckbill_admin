@@ -181,6 +181,115 @@ test('leads index supports sorting by last action', function () {
             ->where('filters.direction', 'desc'));
 });
 
+test('lead follow-up can be scheduled and filtered', function () {
+    $this->travelBack();
+
+    $admin = User::query()->where('email', 'admin@truckbill.in')->first();
+
+    $lead = Lead::create([
+        'name' => 'Follow Up Lead',
+        'email' => 'follow-up@example.com',
+        'source' => 'manual',
+        'status' => 'new',
+    ]);
+
+    $this->actingAs($admin)
+        ->patch(route('leads.update', $lead), [
+            'next_follow_up_at' => now()->addDays(2)->toDateString(),
+        ])
+        ->assertRedirect();
+
+    expect($lead->fresh()->next_follow_up_at?->toDateString())->toBe(now()->addDays(2)->toDateString());
+
+    $lead->update(['next_follow_up_at' => '2026-07-08']);
+
+    expect($lead->fresh()->toArray()['next_follow_up_at'])->toBe('2026-07-08');
+
+    $overdue = Lead::create([
+        'name' => 'Overdue Lead',
+        'email' => 'overdue-follow-up@example.com',
+        'source' => 'manual',
+        'status' => 'new',
+        'next_follow_up_at' => now()->subDay()->toDateString(),
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('leads.index', ['follow_up' => 'overdue', 'search' => 'overdue-follow-up@example.com']))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('leads.data', 1)
+            ->where('leads.data.0.email', 'overdue-follow-up@example.com')
+            ->where('leads.data.0.follow_up_status', 'overdue'));
+});
+
+test('follow-up filters are mutually exclusive', function () {
+    $this->travelTo('2026-06-15 10:00:00');
+
+    Lead::query()->delete();
+
+    $admin = User::query()->where('email', 'admin@truckbill.in')->first();
+
+    Lead::create([
+        'name' => 'Overdue',
+        'email' => 'exclusive-overdue@example.com',
+        'source' => 'manual',
+        'status' => 'new',
+        'next_follow_up_at' => now()->subDay()->toDateString(),
+    ]);
+
+    Lead::create([
+        'name' => 'Due Today',
+        'email' => 'exclusive-due-today@example.com',
+        'source' => 'manual',
+        'status' => 'new',
+        'next_follow_up_at' => now()->toDateString(),
+    ]);
+
+    Lead::create([
+        'name' => 'Upcoming',
+        'email' => 'exclusive-upcoming@example.com',
+        'source' => 'manual',
+        'status' => 'new',
+        'next_follow_up_at' => now()->addDays(2)->toDateString(),
+    ]);
+
+    Lead::create([
+        'name' => 'No Follow Up',
+        'email' => 'exclusive-none@example.com',
+        'source' => 'manual',
+        'status' => 'new',
+    ]);
+
+    $overdueEmails = collect(
+        $this->actingAs($admin)
+            ->get(route('leads.index', ['follow_up' => 'overdue']))
+            ->original
+            ->getData()['page']['props']['leads']['data']
+    )->pluck('email');
+
+    expect($overdueEmails->all())->toBe(['exclusive-overdue@example.com']);
+
+    $dueTodayEmails = collect(
+        $this->actingAs($admin)
+            ->get(route('leads.index', ['follow_up' => 'due_today']))
+            ->original
+            ->getData()['page']['props']['leads']['data']
+    )->pluck('email');
+
+    expect($dueTodayEmails->all())->toBe(['exclusive-due-today@example.com']);
+
+    $upcomingEmails = collect(
+        $this->actingAs($admin)
+            ->get(route('leads.index', ['follow_up' => 'upcoming']))
+            ->original
+            ->getData()['page']['props']['leads']['data']
+    )->pluck('email');
+
+    expect($upcomingEmails->all())->toBe(['exclusive-upcoming@example.com']);
+
+    $this->travelBack();
+});
+
 test('sales executive only sees assigned leads', function () {
     $exec = User::query()->where('email', 'sales@truckbill.in')->first();
 

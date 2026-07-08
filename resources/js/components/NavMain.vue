@@ -43,12 +43,18 @@ function isSubItemActive(item: NavSubItem): boolean {
     }
 
     const currentStatus = current.searchParams.get('status') ?? '';
+    const currentFollowUp = current.searchParams.get('follow_up') ?? '';
 
-    if (item.status === undefined) {
-        return currentStatus === '';
+    if (item.status === undefined && item.follow_up === undefined) {
+        return currentStatus === '' && currentFollowUp === '';
     }
 
-    return currentStatus === item.status;
+    if (item.follow_up !== undefined) {
+        return currentFollowUp === item.follow_up
+            && (item.status === undefined || currentStatus === item.status);
+    }
+
+    return currentStatus === item.status && currentFollowUp === '';
 }
 
 function isItemOpen(item: NavItem): boolean {

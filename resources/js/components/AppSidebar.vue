@@ -35,6 +35,8 @@ const mainNavItems = computed<NavItem[]>(() => {
                 { title: 'All', href: leads.index() },
                 { title: 'New', href: leads.index.url({ query: { status: 'new' } }), status: 'new' },
                 { title: 'Contacted', href: leads.index.url({ query: { status: 'contacted' } }), status: 'contacted' },
+                { title: 'Due today', href: leads.index.url({ query: { follow_up: 'due_today' } }), follow_up: 'due_today' },
+                { title: 'Overdue', href: leads.index.url({ query: { follow_up: 'overdue' } }), follow_up: 'overdue' },
             ],
         });
     }

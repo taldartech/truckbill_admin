@@ -13,6 +13,7 @@ use App\Services\OnboardingInvitationService;
 use App\Support\LeadActivityPresenter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Spatie\Activitylog\Models\Activity;
@@ -53,6 +54,12 @@ class LeadController extends Controller
         } elseif ($request->user()?->hasRole('Sales Manager')) {
             $teamIds = User::query()->where('manager_id', $request->user()->id)->pluck('id')->push($request->user()->id);
             $query->whereIn('assigned_to', $teamIds);
+        }
+
+        $followUpFilter = (string) $request->input('follow_up', '');
+
+        if ($followUpFilter !== '' && in_array($followUpFilter, ['overdue', 'due_today', 'upcoming'], true)) {
+            $query->followUpFilter($followUpFilter);
         }
 
         return response()->json($query->paginate(20));
@@ -111,6 +118,7 @@ class LeadController extends Controller
             'status' => ['sometimes', Rule::enum(LeadStatus::class)],
             'assigned_to' => ['nullable', 'exists:users,id'],
             'rejection_reason' => ['nullable', 'string'],
+            'next_follow_up_at' => ['nullable', 'date'],
         ]);
 
         if (isset($data['status'])) {
@@ -126,6 +134,14 @@ class LeadController extends Controller
                 Gate::authorize('assign', $lead);
                 $this->leadService->assign($lead, $newAssignee, $request->user());
             }
+        }
+
+        if (array_key_exists('next_follow_up_at', $data)) {
+            $followUpAt = filled($data['next_follow_up_at'])
+                ? Carbon::parse($data['next_follow_up_at'])->startOfDay()
+                : null;
+            $this->leadService->scheduleFollowUp($lead->fresh(), $followUpAt, $request->user());
+            unset($data['next_follow_up_at']);
         }
 
         if ($data !== []) {
