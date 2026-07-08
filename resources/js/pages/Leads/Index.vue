@@ -31,15 +31,18 @@ const props = defineProps<{
         }>;
         links: Array<{ url: string | null; label: string; active: boolean }>;
     };
-    filters: { status?: string; search?: string; product?: string; sort?: string; direction?: string };
+    filters: { status?: string; search?: string; product?: string; assigned_to?: string; sort?: string; direction?: string };
     statuses: Array<{ value: string; label: string }>;
     products: Array<{ value: string; label: string }>;
+    assignees: Array<{ id: number; name: string }>;
+    canFilterByAssignee: boolean;
     canCreate: boolean;
 }>();
 
 const search = ref(props.filters.search ?? '');
 const status = ref(props.filters.status ?? '');
 const product = ref(props.filters.product ?? '');
+const assignedTo = ref(props.filters.assigned_to ?? '');
 const sort = ref(props.filters.sort ?? 'created_at');
 const direction = ref(props.filters.direction ?? 'desc');
 
@@ -50,6 +53,7 @@ function applyFilters() {
                 search: search.value || undefined,
                 status: status.value || undefined,
                 product: product.value || undefined,
+                assigned_to: assignedTo.value || undefined,
                 sort: sort.value,
                 direction: direction.value,
             },
@@ -106,6 +110,16 @@ function toggleSort(column: string) {
                     <select v-model="product" class="crm-input min-w-[160px]" @change="applyFilters">
                         <option value="">All</option>
                         <option v-for="p in products" :key="p.value" :value="p.value">{{ p.label }}</option>
+                    </select>
+                </div>
+                <div v-if="canFilterByAssignee">
+                    <label class="mb-1 block text-sm">Assign to</label>
+                    <select v-model="assignedTo" class="crm-input min-w-[180px]" @change="applyFilters">
+                        <option value="">All</option>
+                        <option value="unassigned">Unassigned</option>
+                        <option v-for="user in assignees" :key="user.id" :value="String(user.id)">
+                            {{ user.name }}
+                        </option>
                     </select>
                 </div>
                 <button type="button" class="crm-btn-primary" @click="applyFilters">Filter</button>

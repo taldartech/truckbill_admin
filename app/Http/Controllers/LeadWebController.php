@@ -12,6 +12,7 @@ use App\Services\LeadService;
 use App\Services\OnboardingInvitationService;
 use App\Support\CrmDashboardStats;
 use App\Support\LeadActivityPresenter;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -64,6 +65,8 @@ class LeadWebController extends Controller
             $query->whereIn('assigned_to', $teamIds);
         }
 
+        $this->applyAssignedToFilter($request, $query);
+
         $sort = $request->input('sort', 'created_at');
         $direction = $request->input('direction', 'desc') === 'asc' ? 'asc' : 'desc';
         if (in_array($sort, ['name', 'status', 'created_at', 'company_name'], true)) {
@@ -74,8 +77,10 @@ class LeadWebController extends Controller
 
         return Inertia::render('Leads/Index', [
             'leads' => $query->paginate(20)->withQueryString(),
-            'filters' => $request->only(['status', 'search', 'product', 'sort', 'direction']),
+            'filters' => $request->only(['status', 'search', 'product', 'assigned_to', 'sort', 'direction']),
             'canCreate' => $request->user()?->can('create', Lead::class) ?? false,
+            'canFilterByAssignee' => ! $request->user()?->hasAssignedLeadScope(),
+            'assignees' => $this->assigneeFilterOptions($request),
             'statuses' => collect(LeadStatus::cases())->map(fn ($s) => ['value' => $s->value, 'label' => $s->label()]),
             'products' => collect(Product::cases())->map(fn ($p) => ['value' => $p->value, 'label' => $p->label()]),
         ]);
@@ -245,5 +250,57 @@ class LeadWebController extends Controller
 
         Gate::authorize('assign', $lead);
         $this->leadService->assign($lead, $newAssignee, $request->user());
+    }
+
+    /** @return list<array{id: int, name: string}> */
+    private function assigneeFilterOptions(Request $request): array
+    {
+        $user = $request->user();
+
+        if ($user?->hasAssignedLeadScope()) {
+            return [];
+        }
+
+        if ($user?->hasRole('Sales Manager')) {
+            $teamIds = User::query()
+                ->where('manager_id', $user->id)
+                ->pluck('id')
+                ->push($user->id);
+
+            return User::query()
+                ->whereIn('id', $teamIds)
+                ->orderBy('name')
+                ->get(['id', 'name'])
+                ->map(fn (User $u) => ['id' => $u->id, 'name' => $u->name])
+                ->all();
+        }
+
+        return User::query()
+            ->orderBy('name')
+            ->get(['id', 'name'])
+            ->map(fn (User $u) => ['id' => $u->id, 'name' => $u->name])
+            ->all();
+    }
+
+    /** @param Builder<Lead> $query */
+    private function applyAssignedToFilter(Request $request, Builder $query): void
+    {
+        if ($request->user()?->hasAssignedLeadScope() || ! $request->filled('assigned_to')) {
+            return;
+        }
+
+        $value = (string) $request->input('assigned_to');
+
+        if ($value === 'unassigned') {
+            $query->whereNull('assigned_to');
+
+            return;
+        }
+
+        $allowedIds = collect($this->assigneeFilterOptions($request))->pluck('id')->map(fn ($id) => (int) $id);
+
+        if ($allowedIds->contains((int) $value)) {
+            $query->where('assigned_to', (int) $value);
+        }
     }
 }

@@ -86,6 +86,43 @@ test('leads index supports sorting by name', function () {
             ->where('filters.direction', 'asc'));
 });
 
+test('leads index can filter by assignee', function () {
+    $admin = User::query()->where('email', 'admin@truckbill.in')->first();
+    $exec = User::query()->where('email', 'sales@truckbill.in')->first();
+
+    Lead::create([
+        'name' => 'Exec Lead',
+        'email' => 'exec-filter@example.com',
+        'source' => 'manual',
+        'status' => 'new',
+        'assigned_to' => $exec->id,
+    ]);
+
+    Lead::create([
+        'name' => 'Unassigned Lead',
+        'email' => 'unassigned-filter@example.com',
+        'source' => 'manual',
+        'status' => 'new',
+        'assigned_to' => null,
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('leads.index', ['assigned_to' => $exec->id]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('Leads/Index')
+            ->has('leads.data', 1)
+            ->where('leads.data.0.email', 'exec-filter@example.com')
+            ->where('filters.assigned_to', (string) $exec->id));
+
+    $this->actingAs($admin)
+        ->get(route('leads.index', ['assigned_to' => 'unassigned']))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('leads.data', 1)
+            ->where('leads.data.0.email', 'unassigned-filter@example.com'));
+});
+
 test('sales executive only sees assigned leads', function () {
     $exec = User::query()->where('email', 'sales@truckbill.in')->first();
 
