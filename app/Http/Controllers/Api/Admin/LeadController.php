@@ -69,8 +69,17 @@ class LeadController extends Controller
             'email' => ['required', 'email'],
             'product' => ['nullable', Rule::enum(Product::class)],
             'source' => ['nullable', 'string', 'max:100'],
+            'assigned_to' => ['nullable', 'exists:users,id'],
             'remarks' => ['nullable', 'string'],
         ]);
+
+        if (! empty($data['assigned_to'])) {
+            abort_unless($request->user()?->can('leads.assign'), 403);
+        } elseif (! $request->user()?->can('leads.assign')) {
+            $data['assigned_to'] = $request->user()->id;
+        } else {
+            unset($data['assigned_to']);
+        }
 
         $lead = $this->leadService->create([
             ...$data,

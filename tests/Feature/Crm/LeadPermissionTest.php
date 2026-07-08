@@ -75,13 +75,47 @@ test('sales manager can assign leads to team members', function () {
     expect($lead->fresh()->assigned_to)->toBe($exec->id);
 });
 
-test('user without leads view cannot access leads index', function () {
+test('user without lead permissions cannot access leads index', function () {
     $user = User::factory()->create();
     $user->givePermissionTo('users.manage');
 
     $this->actingAs($user)
         ->get(route('leads.index'))
         ->assertForbidden();
+});
+
+test('user with only leads create can access leads index and create form', function () {
+    $user = User::factory()->create();
+    $user->givePermissionTo('leads.create');
+
+    $this->actingAs($user)
+        ->get(route('leads.index'))
+        ->assertOk();
+
+    $this->actingAs($user)
+        ->get(route('leads.create'))
+        ->assertOk();
+});
+
+test('sales executive can create lead and view it afterward', function () {
+    $exec = User::query()->where('email', 'sales@truckbill.in')->first();
+
+    $this->actingAs($exec)
+        ->post(route('leads.store'), [
+            'name' => 'Exec Lead',
+            'email' => 'exec-lead@example.com',
+            'source' => 'manual',
+        ])
+        ->assertRedirect();
+
+    $lead = Lead::query()->where('email', 'exec-lead@example.com')->first();
+
+    expect($lead)->not->toBeNull()
+        ->and($lead->assigned_to)->toBe($exec->id);
+
+    $this->actingAs($exec)
+        ->get(route('leads.show', $lead))
+        ->assertOk();
 });
 
 test('user without leads assign cannot set assignee on create', function () {
@@ -92,7 +126,25 @@ test('user without leads assign cannot set assignee on create', function () {
         ->post(route('leads.store'), [
             'name' => 'New Lead',
             'email' => 'new-lead@example.com',
+            'source' => 'manual',
             'assigned_to' => $manager->id,
         ])
         ->assertForbidden();
+});
+
+test('authenticated user can create lead with source', function () {
+    $manager = User::query()->where('email', 'sales.manager@truckbill.in')->first();
+
+    $this->actingAs($manager)
+        ->post(route('leads.store'), [
+            'name' => 'Referral Lead',
+            'email' => 'referral@example.com',
+            'source' => 'Trade show booth',
+        ])
+        ->assertRedirect();
+
+    $lead = Lead::query()->where('email', 'referral@example.com')->first();
+
+    expect($lead)->not->toBeNull()
+        ->and($lead->source)->toBe('Trade show booth');
 });

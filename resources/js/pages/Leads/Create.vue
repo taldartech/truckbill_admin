@@ -30,6 +30,7 @@ const form = useForm({
     email: '',
     product: '',
     status: 'new',
+    source: '',
     assigned_to: null as number | null,
     remarks: '',
 });
@@ -93,6 +94,12 @@ function submit() {
                             <option v-for="s in statuses" :key="s.value" :value="s.value">{{ s.label }}</option>
                         </select>
                         <p v-if="form.errors.status" class="mt-1 text-sm text-destructive">{{ form.errors.status }}</p>
+                    </label>
+
+                    <label class="text-sm">
+                        Lead source *
+                        <input v-model="form.source" type="text" required class="crm-input mt-1 w-full" placeholder="e.g. referral, phone, website" />
+                        <p v-if="form.errors.source" class="mt-1 text-sm text-destructive">{{ form.errors.source }}</p>
                     </label>
 
                     <label v-if="canAssign" class="text-sm">

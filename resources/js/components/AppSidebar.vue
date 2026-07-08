@@ -25,7 +25,7 @@ const mainNavItems = computed<NavItem[]>(() => {
         { title: 'Dashboard', href: dashboard(), icon: LayoutGrid },
     ];
 
-    if (permissions.value.includes('leads.view')) {
+    if (permissions.value.includes('leads.view') || permissions.value.includes('leads.create')) {
         items.push({ title: 'Leads', href: leads.index(), icon: Users });
     }
 

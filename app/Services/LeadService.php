@@ -150,11 +150,12 @@ class LeadService
     private function formatSource(string $source): string
     {
         return match ($source) {
-            'website_demo' => 'website demo form',
-            'website_contact' => 'website contact form',
-            'website_partner' => 'website partner form',
-            'manual' => 'manual entry',
-            default => str_replace('_', ' ', $source),
+            'website_demo' => 'Website demo form',
+            'website_contact' => 'Website contact form',
+            'website_partner' => 'Website partner form',
+            'website_other' => 'Website (other)',
+            'manual' => 'Manual entry',
+            default => $source,
         };
     }
 }

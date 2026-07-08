@@ -104,19 +104,21 @@ class LeadWebController extends Controller
             'email' => ['required', 'email', 'max:255'],
             'product' => ['nullable', Rule::enum(Product::class)],
             'status' => ['nullable', Rule::enum(LeadStatus::class)],
+            'source' => ['required', 'string', 'max:100'],
             'assigned_to' => ['nullable', 'exists:users,id'],
             'remarks' => ['nullable', 'string', 'max:5000'],
         ]);
 
         if (! empty($data['assigned_to'])) {
             abort_unless($request->user()?->can('leads.assign'), 403);
-        } elseif (array_key_exists('assigned_to', $data)) {
+        } elseif (! $request->user()?->can('leads.assign')) {
+            $data['assigned_to'] = $request->user()->id;
+        } else {
             unset($data['assigned_to']);
         }
 
         $lead = $this->leadService->create([
             ...$data,
-            'source' => 'manual',
             'status' => $data['status'] ?? LeadStatus::New,
         ], $request->user());
 

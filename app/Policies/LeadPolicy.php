@@ -9,25 +9,16 @@ class LeadPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->can('leads.view');
+        return $user->can('leads.view') || $user->can('leads.create');
     }
 
     public function view(User $user, Lead $lead): bool
     {
-        if (! $user->can('leads.view')) {
-            return false;
+        if ($user->can('leads.view')) {
+            return $this->canViewWithLeadScope($user, $lead);
         }
 
-        if ($user->hasRole('Sales Executive')) {
-            return $lead->assigned_to === $user->id;
-        }
-
-        if ($user->hasRole('Sales Manager')) {
-            return $lead->assigned_to === $user->id
-                || $lead->assignee?->manager_id === $user->id;
-        }
-
-        return true;
+        return $user->can('leads.create') && $lead->assigned_to === $user->id;
     }
 
     public function create(User $user): bool
@@ -61,5 +52,19 @@ class LeadPolicy
     public function invite(User $user, Lead $lead): bool
     {
         return $user->can('leads.invite') && $this->view($user, $lead);
+    }
+
+    private function canViewWithLeadScope(User $user, Lead $lead): bool
+    {
+        if ($user->hasRole('Sales Executive')) {
+            return $lead->assigned_to === $user->id;
+        }
+
+        if ($user->hasRole('Sales Manager')) {
+            return $lead->assigned_to === $user->id
+                || $lead->assignee?->manager_id === $user->id;
+        }
+
+        return true;
     }
 }

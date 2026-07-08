@@ -45,6 +45,7 @@ test('admin can manually create lead via web', function () {
             'company_name' => 'Manual Co',
             'product' => 'broker',
             'status' => 'new',
+            'source' => 'manual',
         ])
         ->assertRedirect();
 
