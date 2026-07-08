@@ -26,7 +26,17 @@ const mainNavItems = computed<NavItem[]>(() => {
     ];
 
     if (permissions.value.includes('leads.view') || permissions.value.includes('leads.create')) {
-        items.push({ title: 'Leads', href: leads.index(), icon: Users });
+        items.push({
+            title: 'Leads',
+            href: leads.index(),
+            icon: Users,
+            matchPrefix: true,
+            children: [
+                { title: 'All', href: leads.index() },
+                { title: 'New', href: leads.index.url({ query: { status: 'new' } }), status: 'new' },
+                { title: 'Contacted', href: leads.index.url({ query: { status: 'contacted' } }), status: 'contacted' },
+            ],
+        });
     }
 
     if (permissions.value.includes('users.manage')) {
