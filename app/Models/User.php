@@ -54,4 +54,15 @@ class User extends Authenticatable
     {
         return $this->hasMany(Lead::class, 'assigned_to');
     }
+
+    /** @return list<string> */
+    public static function assignedLeadRoleNames(): array
+    {
+        return ['Sales Executive', 'Sales Partner'];
+    }
+
+    public function hasAssignedLeadScope(): bool
+    {
+        return $this->hasAnyRole(self::assignedLeadRoleNames());
+    }
 }

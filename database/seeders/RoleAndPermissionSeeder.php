@@ -35,6 +35,7 @@ class RoleAndPermissionSeeder extends Seeder
             'Admin' => $permissions,
             'Sales Manager' => ['leads.view', 'leads.create', 'leads.update', 'leads.assign', 'leads.invite'],
             'Sales Executive' => ['leads.view', 'leads.create', 'leads.update', 'leads.invite'],
+            'Sales Partner' => ['leads.view', 'leads.create', 'leads.update'],
             'Support' => ['leads.view'],
         ];
 

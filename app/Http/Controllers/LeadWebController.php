@@ -57,7 +57,7 @@ class LeadWebController extends Controller
                     ->orWhere('company_name', 'like', "%{$search}%");
             });
         }
-        if ($request->user()?->hasRole('Sales Executive')) {
+        if ($request->user()?->hasAssignedLeadScope()) {
             $query->where('assigned_to', $request->user()->id);
         } elseif ($request->user()?->hasRole('Sales Manager')) {
             $teamIds = User::query()->where('manager_id', $request->user()->id)->pluck('id')->push($request->user()->id);

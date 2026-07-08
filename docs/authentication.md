@@ -15,6 +15,7 @@
 | Admin | Full CRM access |
 | Sales Manager | Team leads + assign |
 | Sales Executive | Assigned leads only |
+| Sales Partner | Own referred leads only (create + update, no assign/invite) |
 | Support | Read-only |
 
 ## Website Lead Submission

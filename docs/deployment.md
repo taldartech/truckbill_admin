@@ -80,5 +80,6 @@ php artisan migrate
 | admin@truckbill.in | password | Super Admin |
 | sales.manager@truckbill.in | password | Sales Manager |
 | sales@truckbill.in | password | Sales Executive |
+| sales.partner@truckbill.in | password | Sales Partner |
 
 Change passwords before production deployment.

@@ -56,7 +56,7 @@ class LeadPolicy
 
     private function canViewWithLeadScope(User $user, Lead $lead): bool
     {
-        if ($user->hasRole('Sales Executive')) {
+        if ($user->hasAssignedLeadScope()) {
             return $lead->assigned_to === $user->id;
         }
 

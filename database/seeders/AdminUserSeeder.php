@@ -41,5 +41,16 @@ class AdminUserSeeder extends Seeder
             ],
         );
         $salesExec->assignRole('Sales Executive');
+
+        $salesPartner = User::query()->updateOrCreate(
+            ['email' => 'sales.partner@truckbill.in'],
+            [
+                'name' => 'Sales Partner',
+                'password' => Hash::make('password'),
+                'email_verified_at' => now(),
+                'manager_id' => $salesManager->id,
+            ],
+        );
+        $salesPartner->assignRole('Sales Partner');
     }
 }

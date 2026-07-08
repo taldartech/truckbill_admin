@@ -118,6 +118,47 @@ test('sales executive can create lead and view it afterward', function () {
         ->assertOk();
 });
 
+test('sales partner can create and update own leads but cannot invite', function () {
+    $partner = User::query()->where('email', 'sales.partner@truckbill.in')->first();
+
+    $this->actingAs($partner)
+        ->post(route('leads.store'), [
+            'name' => 'Partner Lead',
+            'email' => 'partner-lead@example.com',
+            'source' => 'referral',
+        ])
+        ->assertRedirect();
+
+    $lead = Lead::query()->where('email', 'partner-lead@example.com')->first();
+
+    expect($lead)->not->toBeNull()
+        ->and($lead->assigned_to)->toBe($partner->id);
+
+    $this->actingAs($partner)
+        ->get(route('leads.show', $lead))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('canUpdate', true)
+            ->where('canAssign', false)
+            ->where('canInvite', false));
+
+    $this->actingAs($partner)
+        ->patch(route('leads.update', $lead), ['status' => 'contacted'])
+        ->assertRedirect();
+
+    $otherLead = Lead::create([
+        'name' => 'Other Lead',
+        'email' => 'other-partner-lead@example.com',
+        'source' => 'manual',
+        'status' => 'new',
+        'assigned_to' => User::query()->where('email', 'sales@truckbill.in')->value('id'),
+    ]);
+
+    $this->actingAs($partner)
+        ->get(route('leads.show', $otherLead))
+        ->assertForbidden();
+});
+
 test('user without leads assign cannot set assignee on create', function () {
     $exec = User::query()->where('email', 'sales@truckbill.in')->first();
     $manager = User::query()->where('email', 'sales.manager@truckbill.in')->first();
