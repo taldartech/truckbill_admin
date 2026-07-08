@@ -4,6 +4,7 @@ import { ref } from 'vue';
 import CrmPageHeader from '@/components/crm/CrmPageHeader.vue';
 import CrmPanel from '@/components/crm/CrmPanel.vue';
 import { Button } from '@/components/ui/button';
+import { formatDateTime } from '@/lib/dates';
 import { dashboard } from '@/routes';
 import leadsRoute from '@/routes/leads';
 
@@ -27,6 +28,8 @@ const props = defineProps<{
             product: string | null;
             source: string;
             created_at: string;
+            last_action_ago: string;
+            last_action_at: string;
             assignee?: { name: string } | null;
         }>;
         links: Array<{ url: string | null; label: string; active: boolean }>;
@@ -137,12 +140,13 @@ function toggleSort(column: string) {
                             <th>Product</th>
                             <th>Source</th>
                             <th>Assigned</th>
+                            <th class="cursor-pointer" @click="toggleSort('last_action_at')">Last action</th>
                             <th class="cursor-pointer" @click="toggleSort('created_at')">Created</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr v-if="props.leads.data.length === 0">
-                            <td colspan="7" class="px-4 py-10 text-center text-muted-foreground">No leads found.</td>
+                            <td colspan="8" class="px-4 py-10 text-center text-muted-foreground">No leads found.</td>
                         </tr>
                         <tr v-for="lead in props.leads.data" :key="lead.id" class="crm-table-row">
                             <td>
@@ -156,6 +160,12 @@ function toggleSort(column: string) {
                             <td class="capitalize">{{ lead.product || '—' }}</td>
                             <td>{{ lead.source }}</td>
                             <td>{{ lead.assignee?.name || '—' }}</td>
+                            <td
+                                class="text-muted-foreground"
+                                :title="formatDateTime(lead.last_action_at)"
+                            >
+                                {{ lead.last_action_ago }}
+                            </td>
                             <td class="text-muted-foreground">{{ new Date(lead.created_at).toLocaleDateString() }}</td>
                         </tr>
                     </tbody>

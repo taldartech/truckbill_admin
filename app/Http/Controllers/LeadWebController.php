@@ -42,7 +42,7 @@ class LeadWebController extends Controller
     {
         Gate::authorize('viewAny', Lead::class);
 
-        $query = Lead::query()->with('assignee');
+        $query = Lead::query()->with('assignee')->withLastActionAt();
 
         if ($request->filled('status')) {
             $query->where('status', $request->string('status'));
@@ -69,14 +69,21 @@ class LeadWebController extends Controller
 
         $sort = $request->input('sort', 'created_at');
         $direction = $request->input('direction', 'desc') === 'asc' ? 'asc' : 'desc';
-        if (in_array($sort, ['name', 'status', 'created_at', 'company_name'], true)) {
+        if ($sort === 'last_action_at') {
+            $query->orderByRaw('COALESCE(last_action_at, leads.created_at) '.$direction);
+        } elseif (in_array($sort, ['name', 'status', 'created_at', 'company_name'], true)) {
             $query->orderBy($sort, $direction);
         } else {
             $query->latest();
         }
 
         return Inertia::render('Leads/Index', [
-            'leads' => $query->paginate(20)->withQueryString(),
+            'leads' => $query->paginate(20)->withQueryString()->through(function (Lead $lead) {
+                $lead->setAttribute('last_action_ago', $lead->lastActionAgo());
+                $lead->setAttribute('last_action_at', $lead->lastActionAt()->toIso8601String());
+
+                return $lead;
+            }),
             'filters' => $request->only(['status', 'search', 'product', 'assigned_to', 'sort', 'direction']),
             'canCreate' => $request->user()?->can('create', Lead::class) ?? false,
             'canFilterByAssignee' => ! $request->user()?->hasAssignedLeadScope(),

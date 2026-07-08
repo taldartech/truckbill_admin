@@ -123,6 +123,64 @@ test('leads index can filter by assignee', function () {
             ->where('leads.data.0.email', 'unassigned-filter@example.com'));
 });
 
+test('leads index shows duration since last action', function () {
+    $admin = User::query()->where('email', 'admin@truckbill.in')->first();
+
+    $lead = Lead::create([
+        'name' => 'Active Lead',
+        'email' => 'active-lead@example.com',
+        'source' => 'manual',
+        'status' => 'new',
+    ]);
+
+    activity('lead')
+        ->performedOn($lead)
+        ->causedBy($admin)
+        ->event('status_changed')
+        ->log('Status changed to contacted');
+
+    $this->travel(3)->days();
+
+    $this->actingAs($admin)
+        ->get(route('leads.index'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('Leads/Index')
+            ->where('leads.data.0.email', 'active-lead@example.com')
+            ->where('leads.data.0.last_action_ago', '3 days ago'));
+});
+
+test('leads index supports sorting by last action', function () {
+    $admin = User::query()->where('email', 'admin@truckbill.in')->first();
+
+    $older = Lead::create([
+        'name' => 'Older Action Lead',
+        'email' => 'older-action@example.com',
+        'source' => 'manual',
+        'status' => 'new',
+    ]);
+
+    $newer = Lead::create([
+        'name' => 'Newer Action Lead',
+        'email' => 'newer-action@example.com',
+        'source' => 'manual',
+        'status' => 'new',
+    ]);
+
+    activity('lead')->performedOn($older)->causedBy($admin)->log('Older update');
+    $this->travel(1)->day();
+    activity('lead')->performedOn($newer)->causedBy($admin)->log('Newer update');
+
+    $this->actingAs($admin)
+        ->get(route('leads.index', ['sort' => 'last_action_at', 'direction' => 'desc']))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('leads.data.0.email', 'newer-action@example.com')
+            ->where('leads.data.1.email', 'older-action@example.com')
+            ->where('filters.sort', 'last_action_at')
+            ->where('filters.direction', 'desc'));
+});
+
 test('sales executive only sees assigned leads', function () {
     $exec = User::query()->where('email', 'sales@truckbill.in')->first();
 

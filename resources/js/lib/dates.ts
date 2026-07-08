@@ -13,3 +13,14 @@ export function formatDate(value?: string | null): string {
 
     return new Date(Number(year), Number(month) - 1, Number(day)).toLocaleDateString('en-GB');
 }
+
+export function formatDateTime(value?: string | null): string {
+    if (!value) {
+        return '—';
+    }
+
+    return new Date(value).toLocaleString('en-GB', {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+    });
+}
