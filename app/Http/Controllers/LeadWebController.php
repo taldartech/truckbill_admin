@@ -181,7 +181,13 @@ class LeadWebController extends Controller
         ]);
 
         if (isset($data['status'])) {
-            $this->leadService->updateStatus($lead, LeadStatus::from($data['status']), $request->user());
+            $this->leadService->ensureLostHasRemarks($data['status'], $data['remarks'] ?? null, $lead);
+
+            $reason = $data['status'] === LeadStatus::Lost->value
+                ? trim((string) ($data['remarks'] ?? $lead->remarks))
+                : null;
+
+            $this->leadService->updateStatus($lead, LeadStatus::from($data['status']), $request->user(), $reason);
             unset($data['status']);
         }
 

@@ -8,6 +8,7 @@ use App\Models\Lead;
 use App\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class LeadService
 {
@@ -27,6 +28,21 @@ class LeadService
 
             return $lead;
         });
+    }
+
+    public function ensureLostHasRemarks(string $status, ?string $remarks, Lead $lead, ?string $rejectionReason = null): void
+    {
+        if ($status !== LeadStatus::Lost->value) {
+            return;
+        }
+
+        $value = $remarks ?? $rejectionReason ?? $lead->remarks ?? $lead->rejection_reason;
+
+        if (blank(trim((string) $value))) {
+            throw ValidationException::withMessages([
+                'remarks' => 'Remarks are required when marking a lead as Lost.',
+            ]);
+        }
     }
 
     public function updateStatus(Lead $lead, LeadStatus $status, ?User $actor = null, ?string $reason = null): Lead

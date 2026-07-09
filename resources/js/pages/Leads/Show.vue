@@ -57,6 +57,8 @@ const updateForm = useForm({
 
 const followUpStatus = computed(() => followUpStatusFromDate(props.lead.next_follow_up_at));
 
+const remarksRequired = computed(() => updateForm.status === 'lost');
+
 const noteForm = useForm({ body: '' });
 const inviteForm = useForm({ product: props.lead.product || 'broker' });
 
@@ -142,7 +144,7 @@ function formatActivityTime(value: string) {
                 <ul class="space-y-3">
                     <li v-for="note in lead.notes" :key="note.id" class="rounded-lg bg-muted/30 p-3 text-sm">
                         <p>{{ note.body }}</p>
-                        <p class="text-muted-foreground mt-1 text-xs">{{ note.author?.name }}</p>
+                        <p class="text-muted-foreground mt-1 text-xs">{{ note.author?.name }} ({{ formatActivityTime(note.created_at ?? '') }})</p>
                     </li>
                 </ul>
                 </div>
@@ -200,8 +202,19 @@ function formatActivityTime(value: string) {
                     </select>
                 </div>
                 <div>
-                    <label class="text-sm">Remarks</label>
-                    <textarea v-model="updateForm.remarks" class="crm-input mt-1 min-h-24 w-full" />
+                    <label class="text-sm">
+                        Remarks
+                        <span v-if="remarksRequired" class="text-destructive">*</span>
+                    </label>
+                    <textarea
+                        v-model="updateForm.remarks"
+                        class="crm-input mt-1 min-h-24 w-full"
+                        :required="remarksRequired"
+                    />
+                    <p v-if="remarksRequired" class="mt-1 text-xs text-muted-foreground">
+                        Required when marking the lead as Lost.
+                    </p>
+                    <p v-if="updateForm.errors.remarks" class="mt-1 text-sm text-destructive">{{ updateForm.errors.remarks }}</p>
                 </div>
                 <div>
                     <label class="text-sm">Next follow-up</label>

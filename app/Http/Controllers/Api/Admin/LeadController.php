@@ -122,7 +122,18 @@ class LeadController extends Controller
         ]);
 
         if (isset($data['status'])) {
-            $this->leadService->updateStatus($lead, LeadStatus::from($data['status']), $request->user(), $data['rejection_reason'] ?? null);
+            $this->leadService->ensureLostHasRemarks(
+                $data['status'],
+                $data['remarks'] ?? null,
+                $lead,
+                $data['rejection_reason'] ?? null,
+            );
+
+            $reason = $data['status'] === LeadStatus::Lost->value
+                ? trim((string) ($data['remarks'] ?? $data['rejection_reason'] ?? $lead->remarks ?? $lead->rejection_reason))
+                : ($data['rejection_reason'] ?? null);
+
+            $this->leadService->updateStatus($lead, LeadStatus::from($data['status']), $request->user(), $reason);
             unset($data['status'], $data['rejection_reason']);
         }
 

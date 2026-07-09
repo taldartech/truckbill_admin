@@ -290,6 +290,39 @@ test('follow-up filters are mutually exclusive', function () {
     $this->travelBack();
 });
 
+test('remarks are required when marking a lead as lost', function () {
+    $admin = User::query()->where('email', 'admin@truckbill.in')->first();
+
+    $lead = Lead::create([
+        'name' => 'Lost Lead',
+        'email' => 'lost-lead@example.com',
+        'source' => 'manual',
+        'status' => 'new',
+    ]);
+
+    $this->actingAs($admin)
+        ->from(route('leads.show', $lead))
+        ->patch(route('leads.update', $lead), [
+            'status' => 'lost',
+            'remarks' => '',
+        ])
+        ->assertSessionHasErrors('remarks');
+
+    expect($lead->fresh()->status->value)->toBe('new');
+
+    $this->actingAs($admin)
+        ->patch(route('leads.update', $lead), [
+            'status' => 'lost',
+            'remarks' => 'Budget constraints',
+        ])
+        ->assertRedirect();
+
+    expect($lead->fresh())
+        ->status->value->toBe('lost')
+        ->remarks->toBe('Budget constraints')
+        ->rejection_reason->toBe('Budget constraints');
+});
+
 test('sales executive only sees assigned leads', function () {
     $exec = User::query()->where('email', 'sales@truckbill.in')->first();
 
