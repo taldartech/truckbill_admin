@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, useForm } from '@inertiajs/vue3';
+import { computed } from 'vue';
 import CrmPageHeader from '@/components/crm/CrmPageHeader.vue';
 import CrmPanel from '@/components/crm/CrmPanel.vue';
 import { Button } from '@/components/ui/button';
@@ -28,7 +29,11 @@ const form = useForm({
     password_confirmation: '',
     role: 'Sales Executive',
     manager_id: null as number | null,
+    skip_onboarding: false,
 });
+
+const isSalesPartner = computed(() => form.role === 'Sales Partner');
+const showPasswordFields = computed(() => !isSalesPartner.value || form.skip_onboarding);
 
 function submit() {
     form.post(usersRoute.store().url);
@@ -62,16 +67,18 @@ function submit() {
                         <p v-if="form.errors.email" class="mt-1 text-sm text-destructive">{{ form.errors.email }}</p>
                     </label>
 
-                    <label class="text-sm">
-                        Password *
-                        <input v-model="form.password" type="password" required class="crm-input mt-1 w-full" />
-                    </label>
+                    <template v-if="showPasswordFields">
+                        <label class="text-sm">
+                            Password *
+                            <input v-model="form.password" type="password" :required="showPasswordFields" class="crm-input mt-1 w-full" />
+                        </label>
 
-                    <label class="text-sm">
-                        Confirm password *
-                        <input v-model="form.password_confirmation" type="password" required class="crm-input mt-1 w-full" />
-                        <p v-if="form.errors.password" class="mt-1 text-sm text-destructive">{{ form.errors.password }}</p>
-                    </label>
+                        <label class="text-sm">
+                            Confirm password *
+                            <input v-model="form.password_confirmation" type="password" :required="showPasswordFields" class="crm-input mt-1 w-full" />
+                            <p v-if="form.errors.password" class="mt-1 text-sm text-destructive">{{ form.errors.password }}</p>
+                        </label>
+                    </template>
 
                     <label class="text-sm">
                         Role *
@@ -89,6 +96,18 @@ function submit() {
                         </select>
                         <p v-if="form.errors.manager_id" class="mt-1 text-sm text-destructive">{{ form.errors.manager_id }}</p>
                     </label>
+
+                    <div v-if="isSalesPartner" class="text-sm md:col-span-2 lg:col-span-3">
+                        <label class="flex items-start gap-2">
+                            <input v-model="form.skip_onboarding" type="checkbox" class="mt-1" />
+                            <span>
+                                Skip onboarding
+                                <span class="mt-1 block text-xs text-muted-foreground">
+                                    When unchecked, an onboarding email is sent and the partner will set their password and profile details themselves.
+                                </span>
+                            </span>
+                        </label>
+                    </div>
                 </div>
 
                 <div class="flex flex-wrap gap-3 border-t border-border pt-4">

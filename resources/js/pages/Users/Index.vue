@@ -26,11 +26,25 @@ const props = defineProps<{
             roles: Array<{ name: string }>;
             manager?: { name: string } | null;
             assigned_leads_count: number;
+            partner_onboarding_status?: string | null;
         }>;
     };
     filters: { search?: string; role?: string };
     roles: string[];
 }>();
+
+function onboardingStatusLabel(status: string | null | undefined): string {
+    switch (status) {
+        case 'pending':
+            return 'Pending onboarding';
+        case 'onboarded':
+            return 'Onboarded';
+        case 'skipped':
+            return 'Skipped';
+        default:
+            return '';
+    }
+}
 
 const { can } = usePermissions();
 
@@ -97,6 +111,12 @@ function applyFilters() {
                             <td>
                                 <div class="font-semibold">{{ user.name }}</div>
                                 <div class="text-xs text-muted-foreground">{{ user.email }}</div>
+                                <span
+                                    v-if="user.partner_onboarding_status"
+                                    class="mt-1 inline-block rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
+                                >
+                                    {{ onboardingStatusLabel(user.partner_onboarding_status) }}
+                                </span>
                             </td>
                             <td>{{ user.roles[0]?.name || '—' }}</td>
                             <td>{{ user.manager?.name || '—' }}</td>

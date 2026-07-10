@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
@@ -25,7 +26,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['name', 'email', 'password', 'manager_id'])]
+#[Fillable(['name', 'email', 'password', 'manager_id', 'email_verified_at'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -53,6 +54,47 @@ class User extends Authenticatable
     public function assignedLeads(): HasMany
     {
         return $this->hasMany(Lead::class, 'assigned_to');
+    }
+
+    public function salesPartnerProfile(): HasOne
+    {
+        return $this->hasOne(SalesPartnerProfile::class);
+    }
+
+    public function partnerOnboardingInvitations(): HasMany
+    {
+        return $this->hasMany(PartnerOnboardingInvitation::class);
+    }
+
+    public function isSalesPartner(): bool
+    {
+        return $this->hasRole('Sales Partner');
+    }
+
+    public function hasCompletedPartnerOnboarding(): bool
+    {
+        return $this->salesPartnerProfile?->onboarding_completed_at !== null;
+    }
+
+    public function partnerOnboardingStatus(): ?string
+    {
+        if (! $this->isSalesPartner()) {
+            return null;
+        }
+
+        if ($this->salesPartnerProfile?->onboarding_completed_at !== null) {
+            return 'onboarded';
+        }
+
+        $invitations = $this->relationLoaded('partnerOnboardingInvitations')
+            ? $this->partnerOnboardingInvitations
+            : $this->partnerOnboardingInvitations()->get();
+
+        $hasPendingInvitation = $invitations
+            ->whereNull('completed_at')
+            ->contains(fn (PartnerOnboardingInvitation $invitation) => $invitation->expires_at->isFuture());
+
+        return $hasPendingInvitation ? 'pending' : 'skipped';
     }
 
     /** @return list<string> */

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\LeadWebController;
+use App\Http\Controllers\PartnerOnboardingWebController;
 use App\Http\Controllers\RoleWebController;
 use App\Http\Controllers\SubscriptionWebController;
 use App\Http\Controllers\UserWebController;
@@ -11,6 +12,12 @@ Route::get('/', function () {
         ? redirect()->route('dashboard')
         : redirect()->route('login');
 })->name('home');
+
+Route::get('partner-onboarding/{token}', [PartnerOnboardingWebController::class, 'show'])
+    ->name('partner-onboarding.show');
+Route::post('partner-onboarding/{token}', [PartnerOnboardingWebController::class, 'store'])
+    ->middleware('throttle:10,1')
+    ->name('partner-onboarding.store');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', [LeadWebController::class, 'dashboard'])->name('dashboard');

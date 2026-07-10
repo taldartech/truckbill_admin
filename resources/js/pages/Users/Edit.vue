@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { computed } from 'vue';
 import CrmPageHeader from '@/components/crm/CrmPageHeader.vue';
 import CrmPanel from '@/components/crm/CrmPanel.vue';
 import { Button } from '@/components/ui/button';
+import { formatDateTime } from '@/lib/dates';
 import { dashboard } from '@/routes';
 import usersRoute from '@/routes/users';
 
@@ -18,6 +20,19 @@ defineOptions({
 
 const props = defineProps<{
     user: { id: number; name: string; email: string; manager_id: number | null; role: string | null };
+    partnerOnboardingStatus: string | null;
+    salesPartnerProfile: {
+        legal_name: string;
+        mobile: string;
+        working_location: string | null;
+        current_company_name: string | null;
+        pan_number: string | null;
+        aadhar_number: string | null;
+        bank_name: string | null;
+        bank_account_number: string | null;
+        ifsc_code: string | null;
+        onboarding_completed_at: string | null;
+    } | null;
     roles: Array<{ id: number; name: string }>;
     managers: Array<{ id: number; name: string }>;
     canDelete: boolean;
@@ -31,6 +46,25 @@ const form = useForm({
     role: props.user.role || 'Sales Executive',
     manager_id: props.user.manager_id,
 });
+
+const isSalesPartner = computed(() => form.role === 'Sales Partner' || props.user.role === 'Sales Partner');
+
+const onboardingStatusLabel = computed(() => {
+    switch (props.partnerOnboardingStatus) {
+        case 'pending':
+            return 'Pending onboarding';
+        case 'onboarded':
+            return 'Onboarded';
+        case 'skipped':
+            return 'Onboarding skipped';
+        default:
+            return '';
+    }
+});
+
+function display(value?: string | null): string {
+    return value?.trim() ? value : '—';
+}
 
 function submit() {
     form.patch(usersRoute.update({ user: props.user.id }).url);
@@ -54,6 +88,70 @@ function destroy() {
                 </Button>
             </template>
         </CrmPageHeader>
+
+        <CrmPanel v-if="isSalesPartner">
+            <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
+                <h2 class="font-semibold">Sales Partner profile</h2>
+                <span
+                    v-if="partnerOnboardingStatus"
+                    class="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground"
+                >
+                    {{ onboardingStatusLabel }}
+                </span>
+            </div>
+
+            <div v-if="salesPartnerProfile" class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <div>
+                    <p class="text-xs text-muted-foreground">Name (PAN / Aadhaar)</p>
+                    <p class="mt-1 text-sm font-medium">{{ display(salesPartnerProfile.legal_name) }}</p>
+                </div>
+                <div>
+                    <p class="text-xs text-muted-foreground">Mobile</p>
+                    <p class="mt-1 text-sm font-medium">{{ display(salesPartnerProfile.mobile) }}</p>
+                </div>
+                <div>
+                    <p class="text-xs text-muted-foreground">Working location</p>
+                    <p class="mt-1 text-sm font-medium">{{ display(salesPartnerProfile.working_location) }}</p>
+                </div>
+                <div>
+                    <p class="text-xs text-muted-foreground">Current company</p>
+                    <p class="mt-1 text-sm font-medium">{{ display(salesPartnerProfile.current_company_name) }}</p>
+                </div>
+                <div>
+                    <p class="text-xs text-muted-foreground">PAN</p>
+                    <p class="mt-1 text-sm font-medium">{{ display(salesPartnerProfile.pan_number) }}</p>
+                </div>
+                <div>
+                    <p class="text-xs text-muted-foreground">Aadhaar</p>
+                    <p class="mt-1 text-sm font-medium">{{ display(salesPartnerProfile.aadhar_number) }}</p>
+                </div>
+                <div>
+                    <p class="text-xs text-muted-foreground">Bank name</p>
+                    <p class="mt-1 text-sm font-medium">{{ display(salesPartnerProfile.bank_name) }}</p>
+                </div>
+                <div>
+                    <p class="text-xs text-muted-foreground">Account number</p>
+                    <p class="mt-1 text-sm font-medium">{{ display(salesPartnerProfile.bank_account_number) }}</p>
+                </div>
+                <div>
+                    <p class="text-xs text-muted-foreground">IFSC</p>
+                    <p class="mt-1 text-sm font-medium">{{ display(salesPartnerProfile.ifsc_code) }}</p>
+                </div>
+                <div v-if="salesPartnerProfile.onboarding_completed_at">
+                    <p class="text-xs text-muted-foreground">Onboarding completed</p>
+                    <p class="mt-1 text-sm font-medium">{{ formatDateTime(salesPartnerProfile.onboarding_completed_at) }}</p>
+                </div>
+            </div>
+
+            <p v-else class="text-sm text-muted-foreground">
+                <template v-if="partnerOnboardingStatus === 'pending'">
+                    This partner has not completed onboarding yet. Profile details will appear here once they submit the onboarding form.
+                </template>
+                <template v-else>
+                    No onboarding profile on file. This partner was created with onboarding skipped or before onboarding was enabled.
+                </template>
+            </p>
+        </CrmPanel>
 
         <CrmPanel>
             <form class="space-y-6" @submit.prevent="submit">
