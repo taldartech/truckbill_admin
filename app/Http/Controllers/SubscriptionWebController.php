@@ -6,6 +6,7 @@ use App\Enums\Product;
 use App\Models\PromoCode;
 use App\Services\ProductApiClient;
 use App\Services\SubscriptionCatalogService;
+use App\Services\SubscriptionQuoteService;
 use App\Services\SubscriptionSettingsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -20,7 +21,51 @@ class SubscriptionWebController extends Controller
         private readonly ProductApiClient $productApi,
         private readonly SubscriptionCatalogService $catalogService,
         private readonly SubscriptionSettingsService $settingsService,
+        private readonly SubscriptionQuoteService $quoteService,
     ) {}
+
+    public function calculator(): Response
+    {
+        $settings = $this->settingsService->currentSettings();
+        $catalog = $this->catalogService->latestCatalogRows()->map(function ($row) {
+            $product = Product::tryFrom($row->product);
+
+            return [
+                'product' => $row->product,
+                'label' => $product?->label() ?? $row->product,
+                'base_price' => (float) $row->base_price,
+                'included_branches' => $row->included_branches,
+                'users_per_branch' => $row->users_per_branch,
+                'included_lr_credits' => $row->included_lr_credits,
+                'included_trucks' => $row->included_trucks,
+                'addon_branch_price' => (float) $row->addon_branch_price,
+                'addon_user_price' => (float) $row->addon_user_price,
+                'addon_truck_price' => (float) $row->addon_truck_price,
+                'features' => $product !== null
+                    ? $this->quoteService->productFeatures($product)
+                    : ['lr_credits' => false, 'trucks' => false],
+            ];
+        })->values();
+
+        return Inertia::render('Subscriptions/Calculator', [
+            'catalog' => $catalog,
+            'gst_rate_percent' => (float) $settings['gst_rate_percent'],
+            'products' => $this->productOptions(),
+        ]);
+    }
+
+    public function calculatorQuote(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'product' => ['required', Rule::enum(Product::class)],
+            'addon_branches' => ['nullable', 'integer', 'min:0'],
+            'addon_users' => ['nullable', 'integer', 'min:0'],
+            'addon_trucks' => ['nullable', 'integer', 'min:0'],
+            'addon_lr_credits' => ['nullable', 'integer', 'min:0'],
+        ]);
+
+        return response()->json($this->quoteService->estimate($validated));
+    }
 
     public function pricing(): Response
     {

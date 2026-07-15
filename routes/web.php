@@ -41,6 +41,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('roles', [RoleWebController::class, 'index'])->name('roles.index');
     Route::patch('roles/{role}', [RoleWebController::class, 'update'])->name('roles.update');
 
+    Route::get('pricing-calculator', [SubscriptionWebController::class, 'calculator'])
+        ->name('pricing-calculator');
+    Route::post('pricing-calculator/quote', [SubscriptionWebController::class, 'calculatorQuote'])
+        ->name('pricing-calculator.quote');
+
     Route::prefix('subscriptions')->name('subscriptions.')->group(function () {
         Route::get('pricing', [SubscriptionWebController::class, 'pricing'])->name('pricing');
         Route::patch('pricing/{product}', [SubscriptionWebController::class, 'updatePricing'])->name('pricing.update');

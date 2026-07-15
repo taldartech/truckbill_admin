@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
-import { Building2, IndianRupee, LayoutGrid, Settings, Shield, Ticket, UserCircle, Users } from '@lucide/vue';
+import { Building2, Calculator, IndianRupee, LayoutGrid, Settings, Shield, Ticket, UserCircle, Users } from '@lucide/vue';
 import { computed } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
 import NavMain from '@/components/NavMain.vue';
@@ -15,6 +15,7 @@ import leads from '@/routes/leads';
 import rolesRoute from '@/routes/roles';
 import subscriptionsRoute from '@/routes/subscriptions';
 import usersRoute from '@/routes/users';
+import { pricingCalculator } from '@/routes';
 import type { NavItem } from '@/types';
 
 const page = usePage();
@@ -23,6 +24,7 @@ const permissions = computed(() => (page.props.auth as { permissions?: string[] 
 const mainNavItems = computed<NavItem[]>(() => {
     const items: NavItem[] = [
         { title: 'Dashboard', href: dashboard(), icon: LayoutGrid },
+        { title: 'Pricing calculator', href: pricingCalculator(), icon: Calculator, matchPrefix: true },
     ];
 
     if (permissions.value.includes('leads.view') || permissions.value.includes('leads.create')) {
