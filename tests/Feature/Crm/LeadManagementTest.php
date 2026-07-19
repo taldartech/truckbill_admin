@@ -2,8 +2,10 @@
 
 use App\Models\Lead;
 use App\Models\User;
+use App\Notifications\LeadCapturedNotification;
 use Database\Seeders\AdminUserSeeder;
 use Database\Seeders\RoleAndPermissionSeeder;
+use Illuminate\Support\Facades\Notification;
 
 beforeEach(function () {
     $this->seed([
@@ -22,6 +24,8 @@ test('public leads api requires api key', function () {
 });
 
 test('public leads api creates lead', function () {
+    Notification::fake();
+
     $this->postJson('/api/v1/public/leads', [
         'name' => 'John Doe',
         'company_name' => 'Acme Transport',
@@ -31,11 +35,78 @@ test('public leads api creates lead', function () {
         'source' => 'website_demo',
         'remarks' => 'Interested in demo',
         'utm_source' => 'google',
+        'utm_medium' => 'cpc',
+        'utm_campaign' => 'demo',
+        'landing_url' => 'https://truckbill.in/?utm_source=google',
+        'referrer' => 'https://google.com/',
     ], ['X-Api-Key' => 'test-website-key'])
         ->assertCreated()
         ->assertJsonPath('success', true);
 
-    expect(Lead::query()->where('email', 'john@example.com')->exists())->toBeTrue();
+    $lead = Lead::query()->where('email', 'john@example.com')->first();
+
+    expect($lead)->not->toBeNull()
+        ->and($lead->utm_source)->toBe('google')
+        ->and($lead->utm_medium)->toBe('cpc')
+        ->and($lead->utm_campaign)->toBe('demo')
+        ->and($lead->landing_url)->toBe('https://truckbill.in/?utm_source=google')
+        ->and($lead->referrer)->toBe('https://google.com/');
+
+    $admins = User::role(['Super Admin', 'Admin'])->get();
+    expect($admins)->not->toBeEmpty();
+
+    Notification::assertSentTo($admins, LeadCapturedNotification::class);
+    Notification::assertNotSentTo(
+        User::role(['Sales Executive', 'Sales Partner'])->get(),
+        LeadCapturedNotification::class,
+    );
+});
+
+test('lead show includes acquisition source and medium', function () {
+    $admin = User::query()->where('email', 'admin@truckbill.in')->first();
+
+    $lead = Lead::create([
+        'name' => 'Acquisition Lead',
+        'email' => 'acquisition@example.com',
+        'source' => 'website_demo',
+        'status' => 'new',
+        'utm_source' => 'facebook',
+        'utm_medium' => 'paid',
+        'utm_campaign' => 'spring',
+        'landing_url' => 'https://truckbill.in/pricing',
+        'referrer' => 'https://facebook.com/',
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('leads.show', $lead))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('Leads/Show')
+            ->where('lead.utm_source', 'facebook')
+            ->where('lead.utm_medium', 'paid')
+            ->where('lead.utm_campaign', 'spring')
+            ->where('lead.landing_url', 'https://truckbill.in/pricing')
+            ->where('lead.referrer', 'https://facebook.com/'));
+});
+
+test('manual lead create does not send captured notification', function () {
+    Notification::fake();
+
+    $admin = User::query()->where('email', 'admin@truckbill.in')->first();
+
+    $this->actingAs($admin)
+        ->post(route('leads.store'), [
+            'name' => 'Manual Lead',
+            'email' => 'manual-notif@example.com',
+            'mobile' => '9876543210',
+            'company_name' => 'Manual Co',
+            'product' => 'broker',
+            'status' => 'new',
+            'source' => 'manual',
+        ])
+        ->assertRedirect();
+
+    Notification::assertNothingSent();
 });
 
 test('authenticated user can view dashboard', function () {

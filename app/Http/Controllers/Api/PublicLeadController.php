@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Api;
 use App\Enums\LeadStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\StorePublicLeadRequest;
-use App\Models\Lead;
+use App\Models\User;
+use App\Notifications\LeadCapturedNotification;
 use App\Services\LeadService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Notification;
 
 class PublicLeadController extends Controller
 {
@@ -21,6 +23,12 @@ class PublicLeadController extends Controller
             'status' => LeadStatus::New,
             'ip_address' => $request->input('ip_address', $request->ip()),
         ]);
+
+        $recipients = User::role(['Super Admin', 'Admin'])->get();
+
+        if ($recipients->isNotEmpty()) {
+            Notification::send($recipients, new LeadCapturedNotification($lead));
+        }
 
         return response()->json([
             'success' => true,

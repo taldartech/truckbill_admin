@@ -27,6 +27,11 @@ const props = defineProps<{
         remarks: string | null;
         assigned_to: number | null;
         next_follow_up_at: string | null;
+        utm_source: string | null;
+        utm_medium: string | null;
+        utm_campaign: string | null;
+        landing_url: string | null;
+        referrer: string | null;
         assignee?: { name: string } | null;
         notes: Array<{ id: number; body: string; author?: { name: string } }>;
     };
@@ -58,6 +63,28 @@ const updateForm = useForm({
 const followUpStatus = computed(() => followUpStatusFromDate(props.lead.next_follow_up_at));
 
 const remarksRequired = computed(() => updateForm.status === 'lost');
+
+const trafficSourceDisplay = computed(() => {
+    if (props.lead.utm_source) {
+        return props.lead.utm_source;
+    }
+
+    if (props.lead.referrer) {
+        try {
+            return new URL(props.lead.referrer).hostname || props.lead.referrer;
+        } catch {
+            return props.lead.referrer;
+        }
+    }
+
+    return 'Direct';
+});
+
+const trafficMediumDisplay = computed(() => props.lead.utm_medium || '—');
+
+function display(value?: string | null): string {
+    return value?.trim() ? value : '—';
+}
 
 const noteForm = useForm({ body: '' });
 const inviteForm = useForm({ product: props.lead.product || 'broker' });
@@ -106,7 +133,7 @@ function formatActivityTime(value: string) {
                 <h1 class="text-2xl font-semibold">{{ lead.name }}</h1>
                 <p class="text-muted-foreground">{{ lead.email }} · {{ lead.mobile || 'No mobile' }}</p>
                 <p class="mt-2">{{ lead.company_name || 'No company' }}</p>
-                <p class="mt-2 text-sm">Source: {{ lead.source }}</p>
+                <p class="mt-2 text-sm">Form channel: {{ lead.source }}</p>
                 <p
                     v-if="lead.next_follow_up_at"
                     class="mt-2 text-sm"
@@ -121,6 +148,32 @@ function formatActivityTime(value: string) {
                 <p v-if="lead.assignee || !canAssign" class="mt-2 text-sm text-muted-foreground">
                     Assigned to: {{ lead.assignee?.name || 'Unassigned' }}
                 </p>
+
+                <div class="mt-4 border-t border-border pt-4">
+                    <h2 class="mb-3 text-sm font-semibold">Acquisition</h2>
+                    <dl class="grid gap-3 text-sm sm:grid-cols-2">
+                        <div>
+                            <dt class="text-xs text-muted-foreground">Source</dt>
+                            <dd class="mt-1 font-medium">{{ trafficSourceDisplay }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs text-muted-foreground">Medium</dt>
+                            <dd class="mt-1 font-medium">{{ trafficMediumDisplay }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs text-muted-foreground">Campaign</dt>
+                            <dd class="mt-1 font-medium">{{ display(lead.utm_campaign) }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs text-muted-foreground">Landing URL</dt>
+                            <dd class="mt-1 break-all font-medium">{{ display(lead.landing_url) }}</dd>
+                        </div>
+                        <div class="sm:col-span-2">
+                            <dt class="text-xs text-muted-foreground">Referrer</dt>
+                            <dd class="mt-1 break-all font-medium">{{ display(lead.referrer) }}</dd>
+                        </div>
+                    </dl>
+                </div>
                 </div>
             </section>
 

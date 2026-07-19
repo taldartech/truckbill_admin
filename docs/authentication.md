@@ -23,7 +23,7 @@
 1. Visitor submits form on `truckbill.in`
 2. Browser sends POST to `submit.php` with UTM metadata
 3. `submit.php` forwards to Admin API with `X-Api-Key` (server-side)
-4. Email notification sent as backup
+4. Admin creates the lead and emails Super Admin / Admin via `LeadCapturedNotification`
 
 ## Unified Onboarding
 
