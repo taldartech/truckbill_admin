@@ -43,7 +43,11 @@ type PaymentRecord = {
     status: string;
     total_amount: number | string;
     created_at: string;
-    razorpay_response?: { offline?: boolean; reference?: string | null } | null;
+    razorpay_response?: {
+        offline?: boolean;
+        trial_extension?: boolean;
+        reference?: string | null;
+    } | null;
 };
 
 const props = defineProps<{
@@ -110,6 +114,13 @@ const offlineForm = useForm({
     reference: '',
     notes: '',
     force: false,
+});
+
+const extendTrialForm = useForm({
+    trial_ends_on: (sub.value.trial_ends_on as string) || (sub.value.ends_on as string) || '',
+    amount: '',
+    reference: '',
+    notes: '',
 });
 
 function formatMoney(value: number | string | undefined) {
@@ -226,7 +237,24 @@ function recordOfflinePayment() {
     );
 }
 
+function extendTrial() {
+    extendTrialForm.post(
+        subscriptionsRoute.companies.extendTrial({ product: props.product, id: props.subscription.company.id }).url,
+        {
+            onSuccess: () => {
+                extendTrialForm.reset('amount', 'reference', 'notes');
+                router.reload({ only: ['subscription'] });
+            },
+        },
+    );
+}
+
 function paymentLabel(payment: PaymentRecord) {
+    if (payment.razorpay_response?.trial_extension) {
+        return payment.razorpay_response.reference
+            ? `Trial extension (${payment.razorpay_response.reference})`
+            : 'Trial extension';
+    }
     if (payment.razorpay_response?.offline) {
         return payment.razorpay_response.reference ? `Offline (${payment.razorpay_response.reference})` : 'Offline';
     }
@@ -242,7 +270,7 @@ const usageEntries = computed(() => Object.entries(props.subscription.usage ?? {
     <div class="crm-page space-y-4">
         <CrmPageHeader
             :title="subscription.company.name"
-            :description="`${product_label} — manage subscription, manual overrides, and offline payments`"
+            :description="`${product_label} — manage subscription, trial extensions, and offline payments`"
         >
             <template #actions>
                 <Button as-child variant="secondary" class="rounded-xl">
@@ -398,6 +426,53 @@ const usageEntries = computed(() => Object.entries(props.subscription.usage ?? {
                 <div class="md:col-span-2">
                     <Button type="submit" class="rounded-xl" :disabled="!editing || overrideForm.processing">Save override</Button>
                 </div>
+            </form>
+        </CrmPanel>
+
+        <CrmPanel v-if="canManageCompanies" title="Extend trial (chargeable)">
+            <p class="mb-4 text-sm text-muted-foreground">
+                Admin-only. Extends the trial access window and records the amount charged for the extension.
+            </p>
+
+            <form class="grid max-w-4xl gap-4" @submit.prevent="extendTrial">
+                <div class="grid gap-4 md:grid-cols-2">
+                    <label class="text-sm">
+                        Trial end date
+                        <input v-model="extendTrialForm.trial_ends_on" class="crm-input mt-1 w-full" type="date" required />
+                        <span v-if="extendTrialForm.errors.trial_ends_on" class="mt-1 block text-sm text-destructive">
+                            {{ extendTrialForm.errors.trial_ends_on }}
+                        </span>
+                    </label>
+                    <label class="text-sm">
+                        Amount charged (₹)
+                        <input
+                            v-model="extendTrialForm.amount"
+                            class="crm-input mt-1 w-full"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            required
+                            placeholder="0.00"
+                        />
+                        <span v-if="extendTrialForm.errors.amount" class="mt-1 block text-sm text-destructive">
+                            {{ extendTrialForm.errors.amount }}
+                        </span>
+                    </label>
+                    <label class="text-sm">
+                        Payment reference
+                        <input v-model="extendTrialForm.reference" class="crm-input mt-1 w-full" placeholder="Cheque / UPI / receipt no." />
+                    </label>
+                    <label class="text-sm md:col-span-2">
+                        Notes
+                        <textarea v-model="extendTrialForm.notes" class="crm-input mt-1 w-full" rows="2" />
+                    </label>
+                </div>
+
+                <p v-if="(page.props.errors as Record<string, string>)?.extend_trial" class="text-sm text-destructive">
+                    {{ (page.props.errors as Record<string, string>).extend_trial }}
+                </p>
+
+                <Button type="submit" class="rounded-xl" :disabled="extendTrialForm.processing">Extend trial</Button>
             </form>
         </CrmPanel>
 

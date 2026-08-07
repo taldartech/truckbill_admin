@@ -366,6 +366,40 @@ class SubscriptionWebController extends Controller
         return back()->with('success', 'Offline payment recorded and plan updated.');
     }
 
+    public function companyExtendTrial(Request $request, string $product, string $id): RedirectResponse
+    {
+        $this->authorizeCompanies();
+
+        $productEnum = Product::from($product);
+
+        $validated = $request->validate([
+            'trial_ends_on' => ['required', 'date', 'after_or_equal:today'],
+            'amount' => ['required', 'numeric', 'min:0'],
+            'reference' => ['nullable', 'string', 'max:100'],
+            'notes' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $validated['admin_user_id'] = $request->user()?->id;
+
+        try {
+            $this->productApi->post("/api/admin/subscriptions/{$id}/extend-trial", $productEnum, $validated);
+        } catch (\RuntimeException $exception) {
+            if (str_contains($exception->getMessage(), '422')) {
+                $message = 'Unable to extend trial.';
+                if (preg_match('/Product API error: 422 (.+)/', $exception->getMessage(), $matches)) {
+                    $payload = json_decode($matches[1], true);
+                    $message = $payload['message'] ?? $message;
+                }
+
+                return back()->withErrors(['extend_trial' => $message]);
+            }
+
+            throw $exception;
+        }
+
+        return back()->with('success', 'Trial extended and charge recorded.');
+    }
+
     private function authorizeView(): void
     {
         abort_unless(auth()->user()?->can('subscriptions.view'), 403);

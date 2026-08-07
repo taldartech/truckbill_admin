@@ -61,6 +61,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::patch('companies/{product}/{id}', [SubscriptionWebController::class, 'companyUpdate'])->name('companies.update');
         Route::post('companies/{product}/{id}/quote', [SubscriptionWebController::class, 'companyQuote'])->name('companies.quote');
         Route::post('companies/{product}/{id}/offline-payment', [SubscriptionWebController::class, 'companyOfflinePayment'])->name('companies.offline-payment');
+        Route::post('companies/{product}/{id}/extend-trial', [SubscriptionWebController::class, 'companyExtendTrial'])->name('companies.extend-trial');
     });
 });
 
