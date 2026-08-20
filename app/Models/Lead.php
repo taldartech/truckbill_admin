@@ -19,6 +19,8 @@ class Lead extends Model
         'company_name',
         'mobile',
         'email',
+        'city',
+        'state',
         'product',
         'source',
         'remarks',

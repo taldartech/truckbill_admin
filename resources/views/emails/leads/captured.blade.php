@@ -21,6 +21,14 @@
             <td style="padding:6px 0;">{{ $lead->company_name ?: '—' }}</td>
         </tr>
         <tr>
+            <td style="padding:6px 0;color:{{ config('mail-brand.colors.muted') }};">City</td>
+            <td style="padding:6px 0;">{{ $lead->city ?: '—' }}</td>
+        </tr>
+        <tr>
+            <td style="padding:6px 0;color:{{ config('mail-brand.colors.muted') }};">State</td>
+            <td style="padding:6px 0;">{{ $lead->state ?: '—' }}</td>
+        </tr>
+        <tr>
             <td style="padding:6px 0;color:{{ config('mail-brand.colors.muted') }};">Form channel</td>
             <td style="padding:6px 0;">{{ $lead->source }}</td>
         </tr>

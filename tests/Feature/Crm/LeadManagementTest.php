@@ -31,6 +31,8 @@ test('public leads api creates lead', function () {
         'company_name' => 'Acme Transport',
         'mobile' => '9876543210',
         'email' => 'john@example.com',
+        'city' => 'Udaipur',
+        'state' => 'Rajasthan',
         'product_interested_in' => 'broker',
         'source' => 'website_demo',
         'remarks' => 'Interested in demo',
@@ -46,6 +48,8 @@ test('public leads api creates lead', function () {
     $lead = Lead::query()->where('email', 'john@example.com')->first();
 
     expect($lead)->not->toBeNull()
+        ->and($lead->city)->toBe('Udaipur')
+        ->and($lead->state)->toBe('Rajasthan')
         ->and($lead->utm_source)->toBe('google')
         ->and($lead->utm_medium)->toBe('cpc')
         ->and($lead->utm_campaign)->toBe('demo')
@@ -60,6 +64,16 @@ test('public leads api creates lead', function () {
         User::role(['Sales Executive', 'Sales Partner'])->get(),
         LeadCapturedNotification::class,
     );
+});
+
+test('public leads api requires email', function () {
+    $this->postJson('/api/v1/public/leads', [
+        'name' => 'No Email',
+        'source' => 'website_demo',
+        'state' => 'Rajasthan',
+    ], ['X-Api-Key' => 'test-website-key'])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['email']);
 });
 
 test('lead show includes acquisition source and medium', function () {

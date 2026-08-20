@@ -24,6 +24,8 @@ const props = defineProps<{
             name: string;
             email: string;
             company_name: string | null;
+            city: string | null;
+            state: string | null;
             status: string;
             product: string | null;
             source: string;
@@ -188,7 +190,12 @@ function followUpClass(status: string | null): string {
                                 </Link>
                                 <div class="text-xs text-muted-foreground">{{ lead.email }}</div>
                             </td>
-                            <td>{{ lead.company_name || '—' }}</td>
+                            <td>
+                                {{ lead.company_name || '—' }}
+                                <div v-if="lead.city || lead.state" class="text-xs text-muted-foreground">
+                                    {{ [lead.city, lead.state].filter(Boolean).join(', ') }}
+                                </div>
+                            </td>
                             <td class="capitalize">{{ lead.status.replace(/_/g, ' ') }}</td>
                             <td class="capitalize">{{ lead.product || '—' }}</td>
                             <td>{{ lead.source }}</td>

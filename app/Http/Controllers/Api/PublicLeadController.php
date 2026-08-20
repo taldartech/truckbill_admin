@@ -17,11 +17,15 @@ class PublicLeadController extends Controller
 
     public function store(StorePublicLeadRequest $request): JsonResponse
     {
+        $data = $request->validated();
+        $product = $data['product_interested_in'] ?? null;
+        unset($data['product_interested_in']);
+
         $lead = $this->leadService->create([
-            ...$request->validated(),
-            'product' => $request->input('product_interested_in'),
+            ...$data,
+            'product' => $product,
             'status' => LeadStatus::New,
-            'ip_address' => $request->input('ip_address', $request->ip()),
+            'ip_address' => $data['ip_address'] ?? $request->ip(),
         ]);
 
         $recipients = User::role(['Super Admin', 'Admin'])->get();

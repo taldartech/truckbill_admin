@@ -141,6 +141,14 @@ class LeadService
             $changes[] = 'Company name updated';
         }
 
+        if (array_key_exists('city', $data) && $data['city'] !== $lead->city) {
+            $changes[] = 'City updated';
+        }
+
+        if (array_key_exists('state', $data) && $data['state'] !== $lead->state) {
+            $changes[] = 'State updated';
+        }
+
         if ($changes === []) {
             return $lead;
         }

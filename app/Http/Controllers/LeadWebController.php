@@ -56,7 +56,10 @@ class LeadWebController extends Controller
             $query->where(function ($q) use ($search): void {
                 $q->where('name', 'like', "%{$search}%")
                     ->orWhere('email', 'like', "%{$search}%")
-                    ->orWhere('company_name', 'like', "%{$search}%");
+                    ->orWhere('company_name', 'like', "%{$search}%")
+                    ->orWhere('mobile', 'like', "%{$search}%")
+                    ->orWhere('city', 'like', "%{$search}%")
+                    ->orWhere('state', 'like', "%{$search}%");
             });
         }
         if ($request->user()?->hasAssignedLeadScope()) {
@@ -124,6 +127,8 @@ class LeadWebController extends Controller
             'company_name' => ['nullable', 'string', 'max:255'],
             'mobile' => ['nullable', 'string', 'max:20'],
             'email' => ['required', 'email', 'max:255'],
+            'city' => ['nullable', 'string', 'max:100'],
+            'state' => ['nullable', 'string', 'max:100'],
             'product' => ['nullable', Rule::enum(Product::class)],
             'status' => ['nullable', Rule::enum(LeadStatus::class)],
             'source' => ['required', 'string', 'max:100'],

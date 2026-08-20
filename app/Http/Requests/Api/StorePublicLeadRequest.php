@@ -20,6 +20,8 @@ class StorePublicLeadRequest extends FormRequest
             'company_name' => ['nullable', 'string', 'max:255'],
             'mobile' => ['nullable', 'string', 'max:20'],
             'email' => ['required', 'email', 'max:255'],
+            'city' => ['nullable', 'string', 'max:100'],
+            'state' => ['nullable', 'string', 'max:100'],
             'product_interested_in' => ['nullable', Rule::enum(Product::class)],
             'source' => ['required', 'string', 'max:100'],
             'remarks' => ['nullable', 'string', 'max:5000'],

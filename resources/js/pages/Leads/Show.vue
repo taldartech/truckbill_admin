@@ -21,6 +21,8 @@ const props = defineProps<{
         email: string;
         mobile: string | null;
         company_name: string | null;
+        city: string | null;
+        state: string | null;
         status: string;
         product: string | null;
         source: string;
@@ -133,6 +135,9 @@ function formatActivityTime(value: string) {
                 <h1 class="text-2xl font-semibold">{{ lead.name }}</h1>
                 <p class="text-muted-foreground">{{ lead.email }} · {{ lead.mobile || 'No mobile' }}</p>
                 <p class="mt-2">{{ lead.company_name || 'No company' }}</p>
+                <p class="mt-1 text-sm text-muted-foreground">
+                    {{ [lead.city, lead.state].filter(Boolean).join(', ') || 'No location' }}
+                </p>
                 <p class="mt-2 text-sm">Form channel: {{ lead.source }}</p>
                 <p
                     v-if="lead.next_follow_up_at"

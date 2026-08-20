@@ -28,6 +28,8 @@ const form = useForm({
     company_name: '',
     mobile: '',
     email: '',
+    city: '',
+    state: '',
     product: '',
     status: 'new',
     source: '',
@@ -77,6 +79,18 @@ function submit() {
                         Company
                         <input v-model="form.company_name" type="text" class="crm-input mt-1 w-full" />
                         <p v-if="form.errors.company_name" class="mt-1 text-sm text-destructive">{{ form.errors.company_name }}</p>
+                    </label>
+
+                    <label class="text-sm">
+                        City
+                        <input v-model="form.city" type="text" class="crm-input mt-1 w-full" />
+                        <p v-if="form.errors.city" class="mt-1 text-sm text-destructive">{{ form.errors.city }}</p>
+                    </label>
+
+                    <label class="text-sm">
+                        State
+                        <input v-model="form.state" type="text" class="crm-input mt-1 w-full" />
+                        <p v-if="form.errors.state" class="mt-1 text-sm text-destructive">{{ form.errors.state }}</p>
                     </label>
 
                     <label class="text-sm">
