@@ -111,6 +111,16 @@ function addNote() {
 }
 
 function sendInvite() {
+    const productLabel =
+        props.products.find((p) => p.value === inviteForm.product)?.label ?? inviteForm.product;
+    const confirmed = confirm(
+        `Send ${productLabel} onboarding link to ${props.lead.email}?`,
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
     inviteForm.post(leadsRoute.invite({ lead: props.lead.id }).url);
 }
 
