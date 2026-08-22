@@ -25,6 +25,15 @@ use Spatie\Activitylog\Models\Activity;
 
 class LeadWebController extends Controller
 {
+    /** @var list<string> */
+    private const DEFAULT_STATUS_FILTER = [
+        'new',
+        'contacted',
+        'qualified',
+        'demo_scheduled',
+        'proposal_sent',
+    ];
+
     public function __construct(
         private readonly LeadService $leadService,
         private readonly OnboardingInvitationService $invitationService,
@@ -45,12 +54,21 @@ class LeadWebController extends Controller
 
         $query = Lead::query()->with('assignee')->withLastActionAt();
 
-        if ($request->filled('status')) {
-            $query->where('status', $request->string('status'));
+        $statuses = $this->resolveStatusFilter($request);
+
+        if ($statuses !== []) {
+            $query->whereIn('status', $statuses);
         }
-        if ($request->filled('product')) {
-            $query->where('product', $request->string('product'));
+
+        $product = (string) $request->input('product', '');
+        $allowedProducts = collect(Product::cases())->map->value->all();
+
+        if ($product !== '' && in_array($product, $allowedProducts, true)) {
+            $query->where('product', $product);
+        } else {
+            $product = '';
         }
+
         if ($request->filled('search')) {
             $search = $request->string('search');
             $query->where(function ($q) use ($search): void {
@@ -97,7 +115,15 @@ class LeadWebController extends Controller
 
                 return $lead;
             }),
-            'filters' => $request->only(['status', 'search', 'product', 'assigned_to', 'follow_up', 'sort', 'direction']),
+            'filters' => [
+                'search' => $request->input('search'),
+                'status' => $statuses,
+                'product' => $product !== '' ? $product : null,
+                'assigned_to' => $request->input('assigned_to'),
+                'follow_up' => $request->input('follow_up'),
+                'sort' => $sort,
+                'direction' => $direction,
+            ],
             'canCreate' => $request->user()?->can('create', Lead::class) ?? false,
             'canFilterByAssignee' => ! $request->user()?->hasAssignedLeadScope(),
             'assignees' => $this->assigneeFilterOptions($request),
@@ -317,6 +343,53 @@ class LeadWebController extends Controller
             ->get(['id', 'name'])
             ->map(fn (User $u) => ['id' => $u->id, 'name' => $u->name])
             ->all();
+    }
+
+    /**
+     * Resolve status filter values.
+     * Missing status → active pipeline defaults.
+     * status=all (or empty after explicit clear) → no status filter.
+     *
+     * @return list<string>
+     */
+    private function resolveStatusFilter(Request $request): array
+    {
+        if (! $request->exists('status')) {
+            return self::DEFAULT_STATUS_FILTER;
+        }
+
+        $raw = $request->input('status');
+
+        if ($raw === 'all' || $raw === '' || $raw === []) {
+            return [];
+        }
+
+        $allowedStatuses = collect(LeadStatus::cases())->map->value->all();
+
+        return array_values(array_intersect($this->filterValues($request, 'status'), $allowedStatuses));
+    }
+
+    /**
+     * Normalize a request filter that may be a single string or an array of values.
+     *
+     * @return list<string>
+     */
+    private function filterValues(Request $request, string $key): array
+    {
+        $value = $request->input($key, []);
+
+        if (is_string($value)) {
+            return $value !== '' ? [$value] : [];
+        }
+
+        if (! is_array($value)) {
+            return [];
+        }
+
+        return array_values(array_filter(
+            array_map(static fn ($item) => is_scalar($item) ? trim((string) $item) : '', $value),
+            static fn (string $item) => $item !== '',
+        ));
     }
 
     /** @param Builder<Lead> $query */

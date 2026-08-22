@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import CrmPageHeader from '@/components/crm/CrmPageHeader.vue';
 import CrmPanel from '@/components/crm/CrmPanel.vue';
 import { Button } from '@/components/ui/button';
@@ -37,9 +37,15 @@ const props = defineProps<{
             assignee?: { name: string } | null;
         }>;
         links: Array<{ url: string | null; label: string; active: boolean }>;
+        current_page: number;
+        last_page: number;
+        per_page: number;
+        total: number;
+        from: number | null;
+        to: number | null;
     };
     filters: {
-        status?: string;
+        status?: string | string[];
         search?: string;
         product?: string;
         assigned_to?: string;
@@ -54,20 +60,63 @@ const props = defineProps<{
     canCreate: boolean;
 }>();
 
+function asArray(value: string | string[] | undefined | null): string[] {
+    if (value == null || value === '' || value === 'all') {
+        return [];
+    }
+
+    return Array.isArray(value) ? value.filter(Boolean) : [value];
+}
+
+const DEFAULT_STATUSES = [
+    'new',
+    'contacted',
+    'qualified',
+    'demo_scheduled',
+    'proposal_sent',
+] as const;
+
 const search = ref(props.filters.search ?? '');
-const status = ref(props.filters.status ?? '');
-const product = ref(props.filters.product ?? '');
+const status = ref<string[]>(asArray(props.filters.status));
+const product = ref(
+    Array.isArray(props.filters.product)
+        ? (props.filters.product[0] ?? '')
+        : (props.filters.product ?? ''),
+);
 const assignedTo = ref(props.filters.assigned_to ?? '');
 const followUp = ref(props.filters.follow_up ?? '');
 const sort = ref(props.filters.sort ?? 'created_at');
 const direction = ref(props.filters.direction ?? 'desc');
+
+const showPagination = computed(() => props.leads.last_page > 1);
+const resultsLabel = computed(() => {
+    if (props.leads.total === 0 || props.leads.from === null || props.leads.to === null) {
+        return 'No results';
+    }
+
+    return `Showing ${props.leads.from}–${props.leads.to} of ${props.leads.total}`;
+});
+
+const hasActiveFilters = computed(() => {
+    const statusIsDefault =
+        status.value.length === DEFAULT_STATUSES.length &&
+        DEFAULT_STATUSES.every((value) => status.value.includes(value));
+
+    return (
+        Boolean(search.value) ||
+        !statusIsDefault ||
+        Boolean(product.value) ||
+        Boolean(assignedTo.value) ||
+        Boolean(followUp.value)
+    );
+});
 
 function applyFilters() {
     router.get(
         leadsRoute.index.url({
             query: {
                 search: search.value || undefined,
-                status: status.value || undefined,
+                status: status.value.length > 0 ? status.value : 'all',
                 product: product.value || undefined,
                 assigned_to: assignedTo.value || undefined,
                 follow_up: followUp.value || undefined,
@@ -80,6 +129,33 @@ function applyFilters() {
     );
 }
 
+function toggleStatus(value: string) {
+    status.value = status.value.includes(value)
+        ? status.value.filter((item) => item !== value)
+        : [...status.value, value];
+    applyFilters();
+}
+
+function clearStatuses() {
+    status.value = [];
+    applyFilters();
+}
+
+function clearFilters() {
+    search.value = '';
+    status.value = [...DEFAULT_STATUSES];
+    product.value = '';
+    assignedTo.value = '';
+    followUp.value = '';
+    applyFilters();
+}
+
+function chipClass(active: boolean): string {
+    return active
+        ? 'border-primary bg-primary/10 text-primary'
+        : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground';
+}
+
 function toggleSort(column: string) {
     if (sort.value === column) {
         direction.value = direction.value === 'asc' ? 'desc' : 'asc';
@@ -90,8 +166,8 @@ function toggleSort(column: string) {
     applyFilters();
 }
 
-function followUpClass(status: string | null): string {
-    switch (status) {
+function followUpClass(statusValue: string | null): string {
+    switch (statusValue) {
         case 'overdue':
             return 'text-destructive font-medium';
         case 'due_today':
@@ -115,51 +191,78 @@ function followUpClass(status: string | null): string {
         </CrmPageHeader>
 
         <CrmPanel>
-            <div class="flex flex-wrap items-end gap-3">
+            <div class="space-y-4">
+                <div class="flex flex-wrap items-end gap-3">
+                    <div>
+                        <label class="mb-1 block text-sm">Search</label>
+                        <input
+                            v-model="search"
+                            type="search"
+                            class="crm-input min-w-[220px]"
+                            placeholder="Name, email, company..."
+                            @keyup.enter="applyFilters"
+                        />
+                    </div>
+                    <div>
+                        <label class="mb-1 block text-sm">Product</label>
+                        <select v-model="product" class="crm-input min-w-[160px]" @change="applyFilters">
+                            <option value="">All</option>
+                            <option v-for="p in products" :key="p.value" :value="p.value">{{ p.label }}</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="mb-1 block text-sm">Follow-up</label>
+                        <select v-model="followUp" class="crm-input min-w-[160px]" @change="applyFilters">
+                            <option value="">All</option>
+                            <option value="overdue">Overdue</option>
+                            <option value="due_today">Due today</option>
+                            <option value="upcoming">Upcoming</option>
+                        </select>
+                    </div>
+                    <div v-if="canFilterByAssignee">
+                        <label class="mb-1 block text-sm">Assign to</label>
+                        <select v-model="assignedTo" class="crm-input min-w-[180px]" @change="applyFilters">
+                            <option value="">All</option>
+                            <option value="unassigned">Unassigned</option>
+                            <option v-for="user in assignees" :key="user.id" :value="String(user.id)">
+                                {{ user.name }}
+                            </option>
+                        </select>
+                    </div>
+                    <button type="button" class="crm-btn-primary" @click="applyFilters">Filter</button>
+                    <button
+                        v-if="hasActiveFilters"
+                        type="button"
+                        class="crm-btn-secondary"
+                        @click="clearFilters"
+                    >
+                        Clear
+                    </button>
+                </div>
+
                 <div>
-                    <label class="mb-1 block text-sm">Search</label>
-                    <input
-                        v-model="search"
-                        type="search"
-                        class="crm-input min-w-[220px]"
-                        placeholder="Name, email, company..."
-                        @keyup.enter="applyFilters"
-                    />
+                    <label class="mb-2 block text-sm">Status</label>
+                    <div class="flex flex-wrap gap-2">
+                        <button
+                            type="button"
+                            class="rounded-lg border px-3 py-1.5 text-sm transition"
+                            :class="chipClass(status.length === 0)"
+                            @click="clearStatuses"
+                        >
+                            All
+                        </button>
+                        <button
+                            v-for="s in statuses"
+                            :key="s.value"
+                            type="button"
+                            class="rounded-lg border px-3 py-1.5 text-sm transition"
+                            :class="chipClass(status.includes(s.value))"
+                            @click="toggleStatus(s.value)"
+                        >
+                            {{ s.label }}
+                        </button>
+                    </div>
                 </div>
-                <div>
-                    <label class="mb-1 block text-sm">Status</label>
-                    <select v-model="status" class="crm-input min-w-[160px]" @change="applyFilters">
-                        <option value="">All</option>
-                        <option v-for="s in statuses" :key="s.value" :value="s.value">{{ s.label }}</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="mb-1 block text-sm">Product</label>
-                    <select v-model="product" class="crm-input min-w-[160px]" @change="applyFilters">
-                        <option value="">All</option>
-                        <option v-for="p in products" :key="p.value" :value="p.value">{{ p.label }}</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="mb-1 block text-sm">Follow-up</label>
-                    <select v-model="followUp" class="crm-input min-w-[160px]" @change="applyFilters">
-                        <option value="">All</option>
-                        <option value="overdue">Overdue</option>
-                        <option value="due_today">Due today</option>
-                        <option value="upcoming">Upcoming</option>
-                    </select>
-                </div>
-                <div v-if="canFilterByAssignee">
-                    <label class="mb-1 block text-sm">Assign to</label>
-                    <select v-model="assignedTo" class="crm-input min-w-[180px]" @change="applyFilters">
-                        <option value="">All</option>
-                        <option value="unassigned">Unassigned</option>
-                        <option v-for="user in assignees" :key="user.id" :value="String(user.id)">
-                            {{ user.name }}
-                        </option>
-                    </select>
-                </div>
-                <button type="button" class="crm-btn-primary" @click="applyFilters">Filter</button>
             </div>
         </CrmPanel>
 
@@ -211,10 +314,39 @@ function followUpClass(status: string | null): string {
                             >
                                 {{ lead.last_action_ago }}
                             </td>
-                            <td class="text-muted-foreground">{{ new Date(lead.created_at).toLocaleDateString() }}</td>
+                            <td class="text-muted-foreground">{{ formatDate(lead.created_at) }}</td>
                         </tr>
                     </tbody>
                 </table>
+            </div>
+
+            <div
+                v-if="props.leads.total > 0"
+                class="flex flex-col gap-3 border-t border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+            >
+                <p class="text-sm text-muted-foreground">{{ resultsLabel }}</p>
+
+                <nav v-if="showPagination" class="flex flex-wrap items-center gap-1" aria-label="Pagination">
+                    <template v-for="(link, index) in props.leads.links" :key="`${link.label}-${index}`">
+                        <Link
+                            v-if="link.url"
+                            :href="link.url"
+                            class="inline-flex min-w-9 items-center justify-center rounded-lg border px-2.5 py-1.5 text-sm transition"
+                            :class="
+                                link.active
+                                    ? 'border-primary bg-primary/10 font-medium text-primary'
+                                    : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground'
+                            "
+                            preserve-scroll
+                            v-html="link.label"
+                        />
+                        <span
+                            v-else
+                            class="inline-flex min-w-9 cursor-not-allowed items-center justify-center rounded-lg border border-border px-2.5 py-1.5 text-sm text-muted-foreground/50"
+                            v-html="link.label"
+                        />
+                    </template>
+                </nav>
             </div>
         </CrmPanel>
     </div>

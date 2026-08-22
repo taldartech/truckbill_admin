@@ -143,6 +143,42 @@ test('authenticated user can view dashboard', function () {
             ->where('stats.by_source.website_demo', 1));
 });
 
+test('leads index paginates results', function () {
+    $admin = User::query()->where('email', 'admin@truckbill.in')->first();
+
+    foreach (range(1, 21) as $i) {
+        Lead::create([
+            'name' => "Paged Lead {$i}",
+            'email' => "paged-lead-{$i}@example.com",
+            'source' => 'manual',
+            'status' => 'new',
+        ]);
+    }
+
+    $this->actingAs($admin)
+        ->get(route('leads.index', ['status' => 'all']))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('Leads/Index')
+            ->has('leads.data', 20)
+            ->where('leads.current_page', 1)
+            ->where('leads.last_page', 2)
+            ->where('leads.total', 21)
+            ->where('leads.from', 1)
+            ->where('leads.to', 20)
+            ->has('leads.links'));
+
+    $this->actingAs($admin)
+        ->get(route('leads.index', ['status' => 'all', 'page' => 2]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('Leads/Index')
+            ->has('leads.data', 1)
+            ->where('leads.current_page', 2)
+            ->where('leads.from', 21)
+            ->where('leads.to', 21));
+});
+
 test('leads index supports sorting by name', function () {
     $user = User::query()->where('email', 'admin@truckbill.in')->first();
 
@@ -169,6 +205,136 @@ test('leads index supports sorting by name', function () {
             ->where('leads.data.1.name', 'Zulu Transport')
             ->where('filters.sort', 'name')
             ->where('filters.direction', 'asc'));
+});
+
+test('leads index defaults to active pipeline statuses', function () {
+    $admin = User::query()->where('email', 'admin@truckbill.in')->first();
+
+    Lead::create([
+        'name' => 'Active New',
+        'email' => 'active-new@example.com',
+        'source' => 'manual',
+        'status' => 'new',
+    ]);
+
+    Lead::create([
+        'name' => 'Lost Lead',
+        'email' => 'lost-default@example.com',
+        'source' => 'manual',
+        'status' => 'lost',
+    ]);
+
+    Lead::create([
+        'name' => 'Converted Lead',
+        'email' => 'converted-default@example.com',
+        'source' => 'manual',
+        'status' => 'converted',
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('leads.index'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('Leads/Index')
+            ->has('leads.data', 1)
+            ->where('leads.data.0.name', 'Active New')
+            ->where('filters.status', [
+                'new',
+                'contacted',
+                'qualified',
+                'demo_scheduled',
+                'proposal_sent',
+            ]));
+});
+
+test('leads index can show all statuses when status is all', function () {
+    $admin = User::query()->where('email', 'admin@truckbill.in')->first();
+
+    Lead::create([
+        'name' => 'Lost Visible',
+        'email' => 'lost-visible@example.com',
+        'source' => 'manual',
+        'status' => 'lost',
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('leads.index', ['status' => 'all']))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('Leads/Index')
+            ->has('leads.data', 1)
+            ->where('leads.data.0.name', 'Lost Visible')
+            ->where('filters.status', []));
+});
+
+test('leads index can filter by multiple statuses', function () {
+    $admin = User::query()->where('email', 'admin@truckbill.in')->first();
+
+    Lead::create([
+        'name' => 'New Broker',
+        'email' => 'new-broker@example.com',
+        'source' => 'manual',
+        'status' => 'new',
+        'product' => 'broker',
+    ]);
+
+    Lead::create([
+        'name' => 'Contacted OwnFleet',
+        'email' => 'contacted-ownfleet@example.com',
+        'source' => 'manual',
+        'status' => 'contacted',
+        'product' => 'ownfleet',
+    ]);
+
+    Lead::create([
+        'name' => 'Qualified Parchun',
+        'email' => 'qualified-parchun@example.com',
+        'source' => 'manual',
+        'status' => 'qualified',
+        'product' => 'parchun',
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('leads.index', [
+            'status' => ['new', 'contacted'],
+            'product' => 'ownfleet',
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('Leads/Index')
+            ->has('leads.data', 1)
+            ->where('leads.data.0.name', 'Contacted OwnFleet')
+            ->where('filters.status', ['new', 'contacted'])
+            ->where('filters.product', 'ownfleet'));
+});
+
+test('leads index still accepts a single status filter string', function () {
+    $admin = User::query()->where('email', 'admin@truckbill.in')->first();
+
+    Lead::create([
+        'name' => 'Only New',
+        'email' => 'only-new@example.com',
+        'source' => 'manual',
+        'status' => 'new',
+        'product' => 'broker',
+    ]);
+
+    Lead::create([
+        'name' => 'Only Contacted',
+        'email' => 'only-contacted@example.com',
+        'source' => 'manual',
+        'status' => 'contacted',
+        'product' => 'broker',
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('leads.index', ['status' => 'new']))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('Leads/Index')
+            ->has('leads.data', 1)
+            ->where('leads.data.0.name', 'Only New')
+            ->where('filters.status', ['new']));
 });
 
 test('leads index can filter by assignee', function () {

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { computed } from 'vue';
-import { followUpLabel, followUpStatusFromDate, formatDate, toDateInputValue } from '@/lib/dates';
+import { followUpLabel, followUpStatusFromDate, formatDate, formatDateTime, toDateInputValue } from '@/lib/dates';
 import { dashboard } from '@/routes';
 import leadsRoute from '@/routes/leads';
 
@@ -131,7 +131,7 @@ function deleteLead() {
 }
 
 function formatActivityTime(value: string) {
-    return new Date(value).toLocaleString();
+    return formatDateTime(value);
 }
 </script>
 
