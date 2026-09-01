@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Models\Lead;
+use App\Models\User;
 
 class CrmDashboardStats
 {
@@ -16,11 +17,12 @@ class CrmDashboardStats
      *     proposal_sent: int,
      *     converted: int,
      *     lost: int,
+     *     follow_up: array{overdue: int, due_today: int, upcoming: int},
      *     by_product: array<string, int>,
      *     by_source: array<string, int>
      * }
      */
-    public static function build(): array
+    public static function build(?User $user = null): array
     {
         $byStatus = Lead::query()
             ->selectRaw('status, count(*) as total')
@@ -38,6 +40,10 @@ class CrmDashboardStats
             ->groupBy('source')
             ->pluck('total', 'source');
 
+        $assignedLeads = $user !== null
+            ? Lead::query()->where('assigned_to', $user->id)
+            : null;
+
         return [
             'total' => Lead::count(),
             'new' => (int) ($byStatus['new'] ?? 0),
@@ -47,6 +53,17 @@ class CrmDashboardStats
             'proposal_sent' => (int) ($byStatus['proposal_sent'] ?? 0),
             'converted' => (int) ($byStatus['converted'] ?? 0),
             'lost' => (int) ($byStatus['lost'] ?? 0),
+            'follow_up' => [
+                'overdue' => $assignedLeads !== null
+                    ? (clone $assignedLeads)->followUpFilter('overdue')->count()
+                    : 0,
+                'due_today' => $assignedLeads !== null
+                    ? (clone $assignedLeads)->followUpFilter('due_today')->count()
+                    : 0,
+                'upcoming' => $assignedLeads !== null
+                    ? (clone $assignedLeads)->followUpFilter('upcoming')->count()
+                    : 0,
+            ],
             'by_product' => $byProduct->mapWithKeys(fn ($total, $product) => [(string) $product => (int) $total])->all(),
             'by_source' => $bySource->mapWithKeys(fn ($total, $source) => [(string) $source => (int) $total])->all(),
         ];

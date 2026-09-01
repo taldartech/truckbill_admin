@@ -143,6 +143,54 @@ test('authenticated user can view dashboard', function () {
             ->where('stats.by_source.website_demo', 1));
 });
 
+test('dashboard shows follow-up counts for leads assigned to the current user', function () {
+    $user = User::query()->where('email', 'admin@truckbill.in')->first();
+
+    Lead::create([
+        'name' => 'Overdue Assigned',
+        'email' => 'dashboard-overdue@example.com',
+        'source' => 'manual',
+        'status' => 'contacted',
+        'assigned_to' => $user->id,
+        'next_follow_up_at' => now()->subDay()->toDateString(),
+    ]);
+
+    Lead::create([
+        'name' => 'Due Today Assigned',
+        'email' => 'dashboard-due-today@example.com',
+        'source' => 'manual',
+        'status' => 'contacted',
+        'assigned_to' => $user->id,
+        'next_follow_up_at' => now()->toDateString(),
+    ]);
+
+    Lead::create([
+        'name' => 'Upcoming Assigned',
+        'email' => 'dashboard-upcoming@example.com',
+        'source' => 'manual',
+        'status' => 'contacted',
+        'assigned_to' => $user->id,
+        'next_follow_up_at' => now()->addDays(3)->toDateString(),
+    ]);
+
+    Lead::create([
+        'name' => 'Overdue Other',
+        'email' => 'dashboard-overdue-other@example.com',
+        'source' => 'manual',
+        'status' => 'contacted',
+        'assigned_to' => User::query()->where('email', 'sales@truckbill.in')->value('id'),
+        'next_follow_up_at' => now()->subDay()->toDateString(),
+    ]);
+
+    $this->actingAs($user)
+        ->get(route('dashboard'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('stats.follow_up.overdue', 1)
+            ->where('stats.follow_up.due_today', 1)
+            ->where('stats.follow_up.upcoming', 1));
+});
+
 test('leads index paginates results', function () {
     $admin = User::query()->where('email', 'admin@truckbill.in')->first();
 

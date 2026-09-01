@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
-import { Inbox, Sparkles, Target, TrendingUp, Users } from '@lucide/vue';
+import { Head, Link, usePage } from '@inertiajs/vue3';
+import { AlertTriangle, Calendar, CalendarClock, Inbox, TrendingUp, Users } from '@lucide/vue';
+import { computed } from 'vue';
 import CrmPageHeader from '@/components/crm/CrmPageHeader.vue';
 import CrmPanel from '@/components/crm/CrmPanel.vue';
 import CrmStatCard from '@/components/crm/CrmStatCard.vue';
@@ -27,19 +28,40 @@ defineProps<{
         proposal_sent: number;
         converted: number;
         lost: number;
+        follow_up: {
+            overdue: number;
+            due_today: number;
+            upcoming: number;
+        };
         by_product: Record<string, number>;
         by_source: Record<string, number>;
     };
 }>();
 
 const { can } = usePermissions();
+const page = usePage();
+const userId = computed(() => (page.props.auth as { user?: { id: number } }).user?.id);
 
-const cards = [
+const statusCards = [
     { key: 'new', label: 'New Leads', icon: Inbox, tone: 'primary' as const },
-    { key: 'qualified', label: 'Qualified', icon: Target, tone: 'blue' as const },
     { key: 'converted', label: 'Converted', icon: TrendingUp, tone: 'success' as const },
-    { key: 'lost', label: 'Lost', icon: Sparkles, tone: 'muted' as const },
+    { key: 'total', label: 'Total Leads', icon: Users, tone: 'primary' as const },
 ] as const;
+
+const followUpCards = [
+    { key: 'overdue', label: 'Overdue', icon: AlertTriangle, tone: 'muted' as const },
+    { key: 'due_today', label: 'Due today', icon: CalendarClock, tone: 'blue' as const },
+    { key: 'upcoming', label: 'Upcoming', icon: Calendar, tone: 'primary' as const },
+] as const;
+
+function followUpHref(filter: string) {
+    return leads.index.url({
+        query: {
+            follow_up: filter,
+            assigned_to: userId.value ? String(userId.value) : undefined,
+        },
+    });
+}
 </script>
 
 <template>
@@ -48,7 +70,7 @@ const cards = [
     <div class="crm-page">
         <CrmPageHeader
             title="CRM Dashboard"
-            description="Lead pipeline overview and conversion metrics"
+            description="Lead pipeline overview and your assigned follow-ups"
         >
             <template #actions>
                 <Button v-if="can('leads.view')" as-child class="rounded-xl">
@@ -57,24 +79,29 @@ const cards = [
             </template>
         </CrmPageHeader>
 
-        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
             <CrmStatCard
-                v-for="card in cards"
+                v-for="card in statusCards"
                 :key="card.key"
                 :label="card.label"
                 :value="stats[card.key]"
                 :icon="card.icon"
                 :tone="card.tone"
             />
+            <Link
+                v-for="card in followUpCards"
+                :key="card.key"
+                :href="followUpHref(card.key)"
+                class="block rounded-2xl transition-opacity hover:opacity-90"
+            >
+                <CrmStatCard
+                    :label="card.label"
+                    :value="stats.follow_up[card.key]"
+                    :icon="card.icon"
+                    :tone="card.tone"
+                />
+            </Link>
         </div>
-
-        <CrmStatCard
-            label="Total Leads"
-            :value="stats.total"
-            :icon="Users"
-            tone="primary"
-            class="max-w-sm"
-        />
 
         <div class="grid gap-4 lg:grid-cols-2">
             <CrmPanel title="By Product">

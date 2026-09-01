@@ -10,6 +10,6 @@ class DashboardController extends Controller
 {
     public function crm(): JsonResponse
     {
-        return response()->json(CrmDashboardStats::build());
+        return response()->json(CrmDashboardStats::build(request()->user()));
     }
 }

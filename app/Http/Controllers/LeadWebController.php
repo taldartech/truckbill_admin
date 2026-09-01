@@ -39,11 +39,11 @@ class LeadWebController extends Controller
         private readonly OnboardingInvitationService $invitationService,
     ) {}
 
-    public function dashboard(): Response
+    public function dashboard(Request $request): Response
     {
         Gate::authorize('viewAny', Lead::class);
 
-        $stats = CrmDashboardStats::build();
+        $stats = CrmDashboardStats::build($request->user());
 
         return Inertia::render('Dashboard', ['stats' => $stats]);
     }
