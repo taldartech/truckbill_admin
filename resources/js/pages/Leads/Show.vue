@@ -35,7 +35,7 @@ const props = defineProps<{
         landing_url: string | null;
         referrer: string | null;
         assignee?: { name: string } | null;
-        notes: Array<{ id: number; body: string; author?: { name: string } }>;
+        notes: Array<{ id: number; body: string; created_at?: string; author?: { name: string } }>;
     };
     activities: Array<{
         id: number;

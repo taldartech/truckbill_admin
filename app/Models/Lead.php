@@ -54,7 +54,7 @@ class Lead extends Model
 
     public function notes(): HasMany
     {
-        return $this->hasMany(LeadNote::class);
+        return $this->hasMany(LeadNote::class)->latest();
     }
 
     public function invitations(): HasMany

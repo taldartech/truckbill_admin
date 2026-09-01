@@ -183,7 +183,7 @@ class LeadWebController extends Controller
         Gate::authorize('view', $lead);
 
         $activities = LeadActivityPresenter::collection(
-            Activity::forSubject($lead)->with('causer')->latest()->limit(10)->get()
+            Activity::forSubject($lead)->with('causer')->latest()->get()
         );
 
         return Inertia::render('Leads/Show', [
