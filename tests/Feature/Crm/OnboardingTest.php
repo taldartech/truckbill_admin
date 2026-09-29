@@ -107,6 +107,19 @@ test('completing onboarding converts the linked lead', function () {
 
     $lead->refresh();
 
-    expect($lead->status)->toBe(LeadStatus::Converted)
-        ->and($lead->converted_at)->not->toBeNull();
+    expect($lead->status)->toBe(LeadStatus::Trial)
+        ->and($lead->converted_at)->toBeNull();
+});
+
+test('marking trial does not downgrade a converted lead', function () {
+    $lead = Lead::create([
+        'name' => 'Paid Customer',
+        'email' => 'paid-customer@example.com',
+        'source' => 'manual',
+        'status' => LeadStatus::Converted,
+    ]);
+
+    app(\App\Services\LeadService::class)->markTrial($lead);
+
+    expect($lead->fresh()->status)->toBe(LeadStatus::Converted);
 });

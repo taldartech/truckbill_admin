@@ -9,6 +9,7 @@ enum LeadStatus: string
     case Qualified = 'qualified';
     case DemoScheduled = 'demo_scheduled';
     case ProposalSent = 'proposal_sent';
+    case Trial = 'trial';
     case Converted = 'converted';
     case Lost = 'lost';
 
@@ -20,6 +21,7 @@ enum LeadStatus: string
             self::Qualified => 'Qualified',
             self::DemoScheduled => 'Demo Scheduled',
             self::ProposalSent => 'Proposal Sent',
+            self::Trial => 'Trial',
             self::Converted => 'Converted',
             self::Lost => 'Lost',
         };

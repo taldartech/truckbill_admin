@@ -29,7 +29,7 @@ class RetryProvisioningJob implements ShouldQueue
             $invitation = $log->invitation()->with('lead')->first();
 
             if ($invitation?->lead !== null) {
-                $leadService->markConverted($invitation->lead);
+                $leadService->markTrial($invitation->lead);
             }
         } catch (\Throwable $exception) {
             Log::error('Provisioning retry failed', [

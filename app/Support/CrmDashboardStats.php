@@ -15,6 +15,7 @@ class CrmDashboardStats
      *     qualified: int,
      *     demo_scheduled: int,
      *     proposal_sent: int,
+     *     trial: int,
      *     converted: int,
      *     lost: int,
      *     follow_up: array{overdue: int, due_today: int, upcoming: int},
@@ -51,6 +52,7 @@ class CrmDashboardStats
             'qualified' => (int) ($byStatus['qualified'] ?? 0),
             'demo_scheduled' => (int) ($byStatus['demo_scheduled'] ?? 0),
             'proposal_sent' => (int) ($byStatus['proposal_sent'] ?? 0),
+            'trial' => (int) ($byStatus['trial'] ?? 0),
             'converted' => (int) ($byStatus['converted'] ?? 0),
             'lost' => (int) ($byStatus['lost'] ?? 0),
             'follow_up' => [

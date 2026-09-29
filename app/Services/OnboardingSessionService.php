@@ -105,7 +105,7 @@ class OnboardingSessionService
         $invitation->loadMissing('lead');
 
         if ($invitation->lead !== null) {
-            $this->leadService->markConverted($invitation->lead);
+            $this->leadService->markTrial($invitation->lead);
         }
 
         $product = Product::from($invitation->product->value ?? $invitation->product);

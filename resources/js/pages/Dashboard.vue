@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, usePage } from '@inertiajs/vue3';
-import { AlertTriangle, Calendar, CalendarClock, Inbox, TrendingUp, Users } from '@lucide/vue';
+import { AlertTriangle, Calendar, CalendarClock, Hourglass, Inbox, TrendingUp, Users } from '@lucide/vue';
 import { computed } from 'vue';
 import CrmPageHeader from '@/components/crm/CrmPageHeader.vue';
 import CrmPanel from '@/components/crm/CrmPanel.vue';
@@ -26,6 +26,7 @@ defineProps<{
         qualified: number;
         demo_scheduled: number;
         proposal_sent: number;
+        trial: number;
         converted: number;
         lost: number;
         follow_up: {
@@ -44,6 +45,7 @@ const userId = computed(() => (page.props.auth as { user?: { id: number } }).use
 
 const statusCards = [
     { key: 'new', label: 'New Leads', icon: Inbox, tone: 'primary' as const },
+    { key: 'trial', label: 'Trial', icon: Hourglass, tone: 'blue' as const },
     { key: 'converted', label: 'Converted', icon: TrendingUp, tone: 'success' as const },
     { key: 'total', label: 'Total Leads', icon: Users, tone: 'primary' as const },
 ] as const;
