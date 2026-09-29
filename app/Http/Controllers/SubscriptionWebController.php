@@ -321,7 +321,14 @@ class SubscriptionWebController extends Controller
             'addon_users' => ['nullable', 'integer', 'min:0'],
             'addon_trucks' => ['nullable', 'integer', 'min:0'],
             'addon_lr_credits' => ['nullable', 'integer', 'min:0'],
+            'promo_code' => ['nullable', 'string', 'max:50'],
         ]);
+
+        $promoError = $this->promoCodeError($product, $validated['promo_code'] ?? null);
+
+        if ($promoError !== null) {
+            return response()->json(['message' => $promoError], 422);
+        }
 
         return response()->json(
             $this->productApi->post("/api/admin/subscriptions/{$id}/quote", $productEnum, $validated),
@@ -340,10 +347,17 @@ class SubscriptionWebController extends Controller
             'addon_users' => ['nullable', 'integer', 'min:0'],
             'addon_trucks' => ['nullable', 'integer', 'min:0'],
             'addon_lr_credits' => ['nullable', 'integer', 'min:0'],
+            'promo_code' => ['nullable', 'string', 'max:50'],
             'reference' => ['nullable', 'string', 'max:100'],
             'notes' => ['nullable', 'string', 'max:500'],
             'force' => ['sometimes', 'boolean'],
         ]);
+
+        $promoError = $this->promoCodeError($product, $validated['promo_code'] ?? null);
+
+        if ($promoError !== null) {
+            return back()->withErrors(['promo_code' => $promoError]);
+        }
 
         $validated['admin_user_id'] = $request->user()?->id;
 
@@ -398,6 +412,17 @@ class SubscriptionWebController extends Controller
         }
 
         return back()->with('success', 'Trial extended and charge recorded.');
+    }
+
+    private function promoCodeError(string $product, ?string $code): ?string
+    {
+        if (blank($code)) {
+            return null;
+        }
+
+        $result = $this->catalogService->validatePromo($product, $code);
+
+        return ($result['valid'] ?? false) ? null : ($result['message'] ?? 'Invalid promo code.');
     }
 
     private function authorizeView(): void

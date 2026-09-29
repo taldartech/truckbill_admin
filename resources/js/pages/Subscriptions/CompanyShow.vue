@@ -42,6 +42,7 @@ type PaymentRecord = {
     type: string;
     status: string;
     total_amount: number | string;
+    promo_code?: string | null;
     created_at: string;
     razorpay_response?: {
         offline?: boolean;
@@ -111,6 +112,7 @@ const offlineForm = useForm({
     addon_users: 0,
     addon_trucks: 0,
     addon_lr_credits: 0,
+    promo_code: '',
     reference: '',
     notes: '',
     force: false,
@@ -205,6 +207,7 @@ async function previewQuote() {
                     addon_users: offlineForm.addon_users,
                     addon_trucks: offlineForm.addon_trucks,
                     addon_lr_credits: offlineForm.addon_lr_credits,
+                    promo_code: offlineForm.promo_code.trim() || null,
                 }),
             },
         );
@@ -225,16 +228,18 @@ async function previewQuote() {
 }
 
 function recordOfflinePayment() {
-    offlineForm.post(
-        subscriptionsRoute.companies.offlinePayment({ product: props.product, id: props.subscription.company.id }).url,
-        {
-            onSuccess: () => {
-                offlineForm.reset();
-                quotePreview.value = null;
-                router.reload({ only: ['subscription'] });
+    offlineForm
+        .transform((data) => ({ ...data, promo_code: data.promo_code.trim() || null }))
+        .post(
+            subscriptionsRoute.companies.offlinePayment({ product: props.product, id: props.subscription.company.id }).url,
+            {
+                onSuccess: () => {
+                    offlineForm.reset();
+                    quotePreview.value = null;
+                    router.reload({ only: ['subscription'] });
+                },
             },
-        },
-    );
+        );
 }
 
 function extendTrial() {
@@ -510,6 +515,19 @@ const usageEntries = computed(() => Object.entries(props.subscription.usage ?? {
                         Extra LR credits
                         <input v-model.number="offlineForm.addon_lr_credits" class="crm-input mt-1 w-full" type="number" min="0" />
                     </label>
+                    <label class="text-sm">
+                        Coupon code (optional)
+                        <input
+                            v-model="offlineForm.promo_code"
+                            class="crm-input mt-1 w-full uppercase"
+                            placeholder="e.g. SAVE10"
+                            maxlength="50"
+                            @input="quotePreview = null"
+                        />
+                        <span v-if="offlineForm.errors.promo_code" class="mt-1 block text-sm text-destructive">
+                            {{ offlineForm.errors.promo_code }}
+                        </span>
+                    </label>
                     <label class="text-sm md:col-span-2">
                         Notes
                         <textarea v-model="offlineForm.notes" class="crm-input mt-1 w-full" rows="2" />
@@ -538,7 +556,9 @@ const usageEntries = computed(() => Object.entries(props.subscription.usage ?? {
                     </div>
                     <div v-for="(item, index) in quotePreview.line_items ?? []" :key="index" class="flex justify-between py-1 text-sm">
                         <span>{{ item.label }}</span>
-                        <span>₹{{ formatMoney(Math.abs(item.amount)) }}</span>
+                        <span :class="{ 'text-emerald-700': item.amount < 0 }">
+                            {{ item.amount < 0 ? '−' : '' }}₹{{ formatMoney(Math.abs(item.amount)) }}
+                        </span>
                     </div>
                     <div class="mt-2 flex justify-between border-t pt-2 text-sm">
                         <span>GST ({{ quotePreview.gst_rate_percent ?? 0 }}%)</span>
@@ -574,7 +594,12 @@ const usageEntries = computed(() => Object.entries(props.subscription.usage ?? {
                             <tr v-for="payment in subscription.payments" :key="payment.id" class="crm-table-row">
                                 <td>{{ formatDate(payment.created_at?.slice(0, 10)) }}</td>
                                 <td class="capitalize">{{ payment.type }}</td>
-                                <td>{{ paymentLabel(payment) }}</td>
+                                <td>
+                                    {{ paymentLabel(payment) }}
+                                    <span v-if="payment.promo_code" class="block text-xs text-muted-foreground">
+                                        Coupon: {{ payment.promo_code }}
+                                    </span>
+                                </td>
                                 <td>₹{{ formatMoney(payment.total_amount) }}</td>
                                 <td class="capitalize">{{ payment.status }}</td>
                             </tr>
