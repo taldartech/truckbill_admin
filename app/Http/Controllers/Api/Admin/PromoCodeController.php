@@ -63,7 +63,7 @@ class PromoCodeController extends Controller
                 'required',
                 'string',
                 'max:50',
-                Rule::unique('promo_codes', 'code')->ignore($ignoreId),
+                Rule::unique('promo_codes', 'code')->ignore($ignoreId)->whereNull('deleted_at'),
             ],
             'discount_type' => ['required', Rule::in(['percentage', 'absolute'])],
             'discount_value' => ['required', 'numeric', 'min:0.01'],

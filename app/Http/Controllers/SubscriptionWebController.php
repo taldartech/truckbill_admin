@@ -163,7 +163,7 @@ class SubscriptionWebController extends Controller
         $this->authorizePromoCodes();
 
         $validated = $request->validate([
-            'code' => ['required', 'string', 'max:50', Rule::unique('promo_codes', 'code')],
+            'code' => ['required', 'string', 'max:50', Rule::unique('promo_codes', 'code')->whereNull('deleted_at')],
             'discount_type' => ['required', Rule::in(['percentage', 'absolute'])],
             'discount_value' => ['required', 'numeric', 'min:0.01'],
             'applicable_products' => ['required', 'array', 'min:1'],
@@ -212,7 +212,7 @@ class SubscriptionWebController extends Controller
         $this->authorizePromoCodes();
 
         $validated = $request->validate([
-            'code' => ['required', 'string', 'max:50', Rule::unique('promo_codes', 'code')->ignore($promoCode->id)],
+            'code' => ['required', 'string', 'max:50', Rule::unique('promo_codes', 'code')->ignore($promoCode->id)->whereNull('deleted_at')],
             'discount_type' => ['required', Rule::in(['percentage', 'absolute'])],
             'discount_value' => ['required', 'numeric', 'min:0.01'],
             'applicable_products' => ['required', 'array', 'min:1'],

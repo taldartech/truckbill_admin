@@ -646,3 +646,22 @@ test('sales executive only sees assigned leads', function () {
         ->assertOk()
         ->assertJsonCount(1, 'data');
 });
+
+test('deleting a lead soft deletes the record', function () {
+    $admin = User::query()->where('email', 'admin@truckbill.in')->first();
+
+    $lead = Lead::create([
+        'name' => 'Soft Delete Lead',
+        'email' => 'soft-delete-lead@example.com',
+        'source' => 'manual',
+        'status' => 'new',
+    ]);
+
+    $this->actingAs($admin)
+        ->delete(route('leads.destroy', $lead))
+        ->assertRedirect(route('leads.index'));
+
+    expect(Lead::query()->find($lead->id))->toBeNull()
+        ->and(Lead::withTrashed()->find($lead->id))->not->toBeNull()
+        ->and(Lead::withTrashed()->find($lead->id)?->trashed())->toBeTrue();
+});

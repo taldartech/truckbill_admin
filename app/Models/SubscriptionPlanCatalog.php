@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\SoftDeletesOnly;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class SubscriptionPlanCatalog extends Model
 {
+    use SoftDeletesOnly;
+
     protected $table = 'subscription_plan_catalog';
 
     protected $fillable = [

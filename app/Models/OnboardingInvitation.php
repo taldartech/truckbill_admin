@@ -3,12 +3,15 @@
 namespace App\Models;
 
 use App\Enums\Product;
+use App\Models\Concerns\SoftDeletesOnly;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class OnboardingInvitation extends Model
 {
+    use SoftDeletesOnly;
+
     protected $fillable = [
         'lead_id',
         'product',

@@ -96,3 +96,42 @@ test('admin can view sales partner profile on user edit page', function () {
             ->where('salesPartnerProfile.mobile', '9876543210')
             ->where('salesPartnerProfile.pan_number', 'ABCDE1234F'));
 });
+
+test('deleting a user soft deletes the record', function () {
+    $admin = User::query()->where('email', 'admin@truckbill.in')->first();
+
+    $user = User::factory()->create([
+        'email' => 'soft-delete-user@truckbill.in',
+    ]);
+    $user->assignRole('Sales Executive');
+
+    $this->actingAs($admin)
+        ->delete(route('users.destroy', $user))
+        ->assertRedirect(route('users.index'));
+
+    expect(User::query()->find($user->id))->toBeNull()
+        ->and(User::withTrashed()->find($user->id))->not->toBeNull()
+        ->and(User::withTrashed()->find($user->id)?->trashed())->toBeTrue();
+});
+
+test('soft-deleted user email can be reused', function () {
+    $admin = User::query()->where('email', 'admin@truckbill.in')->first();
+
+    $user = User::factory()->create([
+        'email' => 'reuse-email@truckbill.in',
+    ]);
+    $user->assignRole('Sales Executive');
+    $user->delete();
+
+    $this->actingAs($admin)
+        ->post(route('users.store'), [
+            'name' => 'Reused Email User',
+            'email' => 'reuse-email@truckbill.in',
+            'password' => 'password123!',
+            'password_confirmation' => 'password123!',
+            'role' => 'Sales Executive',
+        ])
+        ->assertRedirect(route('users.index'));
+
+    expect(User::query()->where('email', 'reuse-email@truckbill.in')->exists())->toBeTrue();
+});

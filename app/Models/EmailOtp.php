@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\SoftDeletesOnly;
 use Illuminate\Database\Eloquent\Model;
 
 class EmailOtp extends Model
 {
+    use SoftDeletesOnly;
+
     protected $fillable = [
         'email',
         'otp_hash',

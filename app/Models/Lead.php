@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\LeadStatus;
 use App\Enums\Product;
+use App\Models\Concerns\SoftDeletesOnly;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,6 +15,8 @@ use Spatie\Activitylog\Models\Activity;
 
 class Lead extends Model
 {
+    use SoftDeletesOnly;
+
     protected $fillable = [
         'name',
         'company_name',
