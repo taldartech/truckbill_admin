@@ -6,6 +6,7 @@ use App\Notifications\LeadCapturedNotification;
 use Database\Seeders\AdminUserSeeder;
 use Database\Seeders\RoleAndPermissionSeeder;
 use Illuminate\Support\Facades\Notification;
+use Spatie\Activitylog\Models\Activity;
 
 beforeEach(function () {
     $this->seed([
@@ -21,6 +22,24 @@ test('public leads api requires api key', function () {
         'email' => 'test@example.com',
         'source' => 'website_demo',
     ])->assertUnauthorized();
+});
+
+test('public leads api labels sibling site sources in the activity log', function () {
+    Notification::fake();
+
+    $this->postJson('/api/v1/public/leads', [
+        'name' => 'Sibling Lead',
+        'email' => 'sibling@example.com',
+        'source' => 'fleetmores_com_demo',
+    ], ['X-Api-Key' => 'test-website-key'])->assertCreated();
+
+    $lead = Lead::query()->where('email', 'sibling@example.com')->firstOrFail();
+
+    expect($lead->source)->toBe('fleetmores_com_demo')
+        ->and(Activity::query()
+            ->where('subject_type', $lead->getMorphClass())
+            ->where('subject_id', $lead->id)
+            ->value('description'))->toBe('Lead submitted from FleetMores.com demo form');
 });
 
 test('public leads api creates lead', function () {

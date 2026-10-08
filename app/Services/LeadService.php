@@ -201,6 +201,10 @@ class LeadService
             'website_contact' => 'Website contact form',
             'website_partner' => 'Website partner form',
             'website_other' => 'Website (other)',
+            'fleetmores_com_demo' => 'FleetMores.com demo form',
+            'fleetmores_in_demo' => 'FleetMores.in demo form',
+            'fleetezee_com_demo' => 'Fleetezee.com demo form',
+            'fleetezee_in_demo' => 'Fleetezee.in demo form',
             'manual' => 'Manual entry',
             default => $source,
         };
