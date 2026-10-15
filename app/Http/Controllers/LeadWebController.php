@@ -204,6 +204,12 @@ class LeadWebController extends Controller
         Gate::authorize('update', $lead);
 
         $data = $request->validate([
+            'name' => ['sometimes', 'required', 'string', 'max:255'],
+            'email' => ['sometimes', 'required', 'email', 'max:255'],
+            'mobile' => ['sometimes', 'nullable', 'string', 'max:20'],
+            'company_name' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'city' => ['sometimes', 'nullable', 'string', 'max:100'],
+            'state' => ['sometimes', 'nullable', 'string', 'max:100'],
             'status' => ['sometimes', Rule::enum(LeadStatus::class)],
             'assigned_to' => ['nullable', 'exists:users,id'],
             'product' => ['nullable', Rule::enum(Product::class)],

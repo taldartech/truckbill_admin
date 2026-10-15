@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, router, useForm } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { followUpLabel, followUpStatusFromDate, formatDate, formatDateTime, toDateInputValue } from '@/lib/dates';
 import { dashboard } from '@/routes';
 import leadsRoute from '@/routes/leads';
@@ -88,6 +88,40 @@ function display(value?: string | null): string {
     return value?.trim() ? value : '—';
 }
 
+const editingDetails = ref(false);
+
+const detailsForm = useForm({
+    name: props.lead.name,
+    email: props.lead.email,
+    mobile: props.lead.mobile ?? '',
+    company_name: props.lead.company_name ?? '',
+    city: props.lead.city ?? '',
+    state: props.lead.state ?? '',
+});
+
+function startEditingDetails() {
+    detailsForm.defaults({
+        name: props.lead.name,
+        email: props.lead.email,
+        mobile: props.lead.mobile ?? '',
+        company_name: props.lead.company_name ?? '',
+        city: props.lead.city ?? '',
+        state: props.lead.state ?? '',
+    });
+    detailsForm.reset();
+    detailsForm.clearErrors();
+    editingDetails.value = true;
+}
+
+function saveDetails() {
+    detailsForm.patch(leadsRoute.update({ lead: props.lead.id }).url, {
+        preserveScroll: true,
+        onSuccess: () => {
+            editingDetails.value = false;
+        },
+    });
+}
+
 const noteForm = useForm({ body: '' });
 const inviteForm = useForm({ product: props.lead.product || 'broker' });
 
@@ -142,12 +176,61 @@ function formatActivityTime(value: string) {
         <div class="space-y-6 lg:col-span-2">
             <section class="crm-panel">
                 <div class="crm-panel-body">
-                <h1 class="text-2xl font-semibold">{{ lead.name }}</h1>
+                <form v-if="editingDetails" class="space-y-4" @submit.prevent="saveDetails">
+                    <h2 class="font-semibold">Edit lead details</h2>
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <label class="text-sm sm:col-span-2">
+                            Name *
+                            <input v-model="detailsForm.name" type="text" required maxlength="255" class="crm-input mt-1 w-full" />
+                            <p v-if="detailsForm.errors.name" class="mt-1 text-sm text-destructive">{{ detailsForm.errors.name }}</p>
+                        </label>
+                        <label class="text-sm">
+                            Email *
+                            <input v-model="detailsForm.email" type="email" required maxlength="255" class="crm-input mt-1 w-full" />
+                            <p v-if="detailsForm.errors.email" class="mt-1 text-sm text-destructive">{{ detailsForm.errors.email }}</p>
+                        </label>
+                        <label class="text-sm">
+                            Mobile
+                            <input v-model="detailsForm.mobile" type="tel" maxlength="20" class="crm-input mt-1 w-full" />
+                            <p v-if="detailsForm.errors.mobile" class="mt-1 text-sm text-destructive">{{ detailsForm.errors.mobile }}</p>
+                        </label>
+                        <label class="text-sm sm:col-span-2">
+                            Company
+                            <input v-model="detailsForm.company_name" type="text" maxlength="255" class="crm-input mt-1 w-full" />
+                            <p v-if="detailsForm.errors.company_name" class="mt-1 text-sm text-destructive">{{ detailsForm.errors.company_name }}</p>
+                        </label>
+                        <label class="text-sm">
+                            City
+                            <input v-model="detailsForm.city" type="text" maxlength="100" class="crm-input mt-1 w-full" />
+                            <p v-if="detailsForm.errors.city" class="mt-1 text-sm text-destructive">{{ detailsForm.errors.city }}</p>
+                        </label>
+                        <label class="text-sm">
+                            State
+                            <input v-model="detailsForm.state" type="text" maxlength="100" class="crm-input mt-1 w-full" />
+                            <p v-if="detailsForm.errors.state" class="mt-1 text-sm text-destructive">{{ detailsForm.errors.state }}</p>
+                        </label>
+                    </div>
+                    <div class="flex flex-wrap gap-3">
+                        <button type="submit" class="crm-btn-primary" :disabled="detailsForm.processing">Save details</button>
+                        <button type="button" class="crm-btn-secondary" :disabled="detailsForm.processing" @click="editingDetails = false">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+
+                <template v-else>
+                <div class="flex items-start justify-between gap-3">
+                    <h1 class="text-2xl font-semibold">{{ lead.name }}</h1>
+                    <button v-if="canUpdate" type="button" class="crm-btn-secondary shrink-0" @click="startEditingDetails">
+                        Edit details
+                    </button>
+                </div>
                 <p class="text-muted-foreground">{{ lead.email }} · {{ lead.mobile || 'No mobile' }}</p>
                 <p class="mt-2">{{ lead.company_name || 'No company' }}</p>
                 <p class="mt-1 text-sm text-muted-foreground">
                     {{ [lead.city, lead.state].filter(Boolean).join(', ') || 'No location' }}
                 </p>
+                </template>
                 <p class="mt-2 text-sm">Form channel: {{ lead.source }}</p>
                 <p
                     v-if="lead.next_follow_up_at"

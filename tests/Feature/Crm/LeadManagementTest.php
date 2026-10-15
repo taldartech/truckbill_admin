@@ -540,6 +540,83 @@ test('lead follow-up can be scheduled and filtered', function () {
             ->where('leads.data.0.follow_up_status', 'overdue'));
 });
 
+test('lead contact details can be edited from the admin panel', function () {
+    $admin = User::query()->where('email', 'admin@truckbill.in')->first();
+
+    $lead = Lead::create([
+        'name' => 'Old Name',
+        'email' => 'old-details@example.com',
+        'mobile' => '9000000000',
+        'source' => 'manual',
+        'status' => 'contacted',
+    ]);
+
+    $this->actingAs($admin)
+        ->patch(route('leads.update', $lead), [
+            'name' => 'New Name',
+            'email' => 'new-details@example.com',
+            'mobile' => '9111111111',
+            'company_name' => 'New Logistics',
+            'city' => 'Pune',
+            'state' => 'Maharashtra',
+        ])
+        ->assertRedirect()
+        ->assertSessionHasNoErrors();
+
+    $lead->refresh();
+
+    expect($lead->name)->toBe('New Name')
+        ->and($lead->email)->toBe('new-details@example.com')
+        ->and($lead->mobile)->toBe('9111111111')
+        ->and($lead->company_name)->toBe('New Logistics')
+        ->and($lead->city)->toBe('Pune')
+        ->and($lead->state)->toBe('Maharashtra')
+        ->and($lead->status->value)->toBe('contacted')
+        ->and(Activity::query()
+            ->where('subject_type', $lead->getMorphClass())
+            ->where('subject_id', $lead->id)
+            ->latest('id')
+            ->value('description'))->toContain('Name updated');
+});
+
+test('lead details edit requires a name and a valid email', function () {
+    $admin = User::query()->where('email', 'admin@truckbill.in')->first();
+
+    $lead = Lead::create([
+        'name' => 'Valid Lead',
+        'email' => 'valid-details@example.com',
+        'source' => 'manual',
+        'status' => 'new',
+    ]);
+
+    $this->actingAs($admin)
+        ->patch(route('leads.update', $lead), [
+            'name' => '',
+            'email' => 'not-an-email',
+        ])
+        ->assertSessionHasErrors(['name', 'email']);
+
+    expect($lead->fresh()->name)->toBe('Valid Lead');
+});
+
+test('support user cannot edit lead details', function () {
+    $support = User::factory()->create();
+    $support->assignRole('Support');
+
+    $lead = Lead::create([
+        'name' => 'Protected Lead',
+        'email' => 'protected-details@example.com',
+        'source' => 'manual',
+        'status' => 'new',
+    ]);
+
+    $this->actingAs($support)
+        ->patch(route('leads.update', $lead), ['name' => 'Hacked'])
+        ->assertForbidden();
+
+    expect($lead->fresh()->name)->toBe('Protected Lead');
+});
+
 test('follow-up filters are mutually exclusive', function () {
     $this->travelTo('2026-06-15 10:00:00');
 
