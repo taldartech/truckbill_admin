@@ -339,23 +339,25 @@ test('user web controller covers search, role filter and password update', funct
 
 test('handle cors middleware covers options 204 and allowed origin headers lines 17, 23-26', function (): void {
     $middleware = new HandleCors;
+    $allowedOrigin = config('crm.allowed_origins')[0]
+        ?? 'https://truckbill.in';
 
-    // OPTIONS request with allowed origin (https://truckbill.in)
+    // OPTIONS request with an origin from CORS_ALLOWED_ORIGINS
     $reqOptions = Request::create('/api/onboarding/check-phone', 'OPTIONS');
-    $reqOptions->headers->set('Origin', 'https://truckbill.in');
+    $reqOptions->headers->set('Origin', $allowedOrigin);
 
     $resOptions = $middleware->handle($reqOptions, fn () => response('should not reach', 200));
     expect($resOptions->getStatusCode())->toBe(204);
-    expect($resOptions->headers->get('Access-Control-Allow-Origin'))->toBe('https://truckbill.in');
+    expect($resOptions->headers->get('Access-Control-Allow-Origin'))->toBe($allowedOrigin);
     expect($resOptions->headers->get('Access-Control-Allow-Methods'))->toContain('GET, POST');
 
-    // GET request with allowed origin
+    // GET request with the same allowed origin
     $reqGet = Request::create('/api/onboarding/check-phone', 'GET');
-    $reqGet->headers->set('Origin', 'https://truckbill.in');
+    $reqGet->headers->set('Origin', $allowedOrigin);
 
     $resGet = $middleware->handle($reqGet, fn () => response('ok', 200));
     expect($resGet->getStatusCode())->toBe(200);
-    expect($resGet->headers->get('Access-Control-Allow-Origin'))->toBe('https://truckbill.in');
+    expect($resGet->headers->get('Access-Control-Allow-Origin'))->toBe($allowedOrigin);
 });
 
 test('verify product signature handles route param that is already a product enum instance line 18', function (): void {
